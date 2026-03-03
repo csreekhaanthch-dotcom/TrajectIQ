@@ -17,13 +17,21 @@ export interface Candidate {
   status: EvaluationStatus;
   jobId: string;
   jobTitle: string;
+  currentRole?: string;
+  company?: string;
   evaluatedAt: string;
-  skills: SkillScore[];
+  skills: string[] | SkillScore[];
   experience: number; // years
   education: string;
   summary: string;
   strengths: string[];
   improvements: string[];
+  // Additional scoring fields
+  skillsScore?: number;
+  impactScore?: number;
+  trajectoryScore?: number;
+  experienceScore?: number;
+  aiRisk?: number;
 }
 
 export interface SkillScore {
