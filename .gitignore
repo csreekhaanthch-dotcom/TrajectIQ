@@ -23,6 +23,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # PyInstaller
 *.manifest
@@ -42,13 +43,47 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *.cover
-*.py,cover
 .hypothesis/
 .pytest_cache/
 
 # Translations
 *.mo
 *.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# celery beat schedule file
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
 
 # Environments
 .env
@@ -58,80 +93,59 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-.python-version
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# TrajectIQ specific
+*.db
+*.key
+*.pem
+!tools/keys/.gitkeep
+data/
+logs/
+backups/
+config/encrypted_config.bin
+config/master_key.bin
+
+# Build outputs
+dist/
+build/
+*.exe
+*.msi
 
 # IDE
-.idea/
 .vscode/
+.idea/
 *.swp
 *.swo
 *~
-.project
-.pydevproject
-.settings/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
-data/db/*.db
-
-# Logs
-*.log
-logs/
-data/logs/*.log
-
-# Uploads
-data/uploads/
-
-# Resumes (sensitive data)
-data/resumes/
-*.pdf
-*.docx
-*.doc
-
-# Keep sample files
-!data/samples/*.pdf
-!data/samples/*.docx
-!data/samples/*.txt
 
 # OS files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
 
-# Node.js / Frontend
-node_modules/
-.next/
-out/
-.nuxt/
-.vuepress/dist/
-.serverless/
-
-# Build outputs
-*.tsbuildinfo
-.next/
-
-# Local Netlify folder
-.netlify
-
-# Secrets (IMPORTANT - never commit these)
-secrets/
-.secrets/
-*.pem
-*.key
-credentials.json
-service-account.json
-
-# Temporary files
-tmp/
-temp/
-*.tmp
-*.temp
+# Keys (NEVER commit private keys)
+tools/keys/private_key.pem
+tools/licenses/

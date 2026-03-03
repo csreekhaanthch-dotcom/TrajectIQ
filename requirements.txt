@@ -1,0 +1,28 @@
+# TrajectIQ Enterprise - Requirements
+# ====================================
+# Core dependencies for the desktop application
+
+# Security
+cryptography>=41.0.0
+bcrypt>=4.0.0
+
+# Database
+# sqlite3 is included in Python standard library
+
+# HTTP (for cloud license validation)
+requests>=2.31.0
+
+# Desktop GUI
+PyQt5>=5.15.0
+
+# Resume parsing
+PyPDF2>=3.0.0
+python-docx>=0.8.11
+
+# Build tools
+pyinstaller>=6.0.0
+setuptools>=68.0.0
+
+# Development/Testing
+pytest>=7.0.0
+pytest-cov>=4.0.0
