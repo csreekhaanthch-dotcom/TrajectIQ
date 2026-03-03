@@ -6,10 +6,11 @@ Creates a fully standalone Windows executable with all dependencies.
 """
 
 import sys
+import os
 from pathlib import Path
 
-# Get the project root
-project_root = SPECPATH if 'SPECPATH' in dir() else Path('.').absolute()
+# Get the project root - SPECPATH is provided by PyInstaller as a string
+project_root = Path(SPECPATH) if 'SPECPATH' in dir() else Path(os.getcwd())
 
 block_cipher = None
 
