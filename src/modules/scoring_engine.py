@@ -1197,7 +1197,9 @@ class ScoringEngine(BaseEvaluator):
             ai_signal=round(ai_signal * 100),
             key_strengths=result["key_strengths"],
             key_concerns=result["key_concerns"],
-            explanation=self._generate_explanation(result)
+            explanation=self._generate_explanation(
+                result, overall_score, grade, recommendation, result["component_scores"]
+            )
         )
         
         # Convert to serializable format
@@ -1250,21 +1252,31 @@ class ScoringEngine(BaseEvaluator):
         
         return concerns[:5]  # Max 5
     
-    def _generate_explanation(self, result: Dict) -> str:
+    def _generate_explanation(self, result: Dict, overall_score: int = None, grade: Grade = None, 
+                               recommendation: Recommendation = None, component_scores: Dict = None) -> str:
         """Generate final explanation"""
-        hi = result["hiring_index"]
+        # Use passed parameters or fall back to result dict (for backward compatibility)
+        if result.get("hiring_index") is not None:
+            hi = result["hiring_index"]
+            parts = [
+                f"Hiring Index: {hi['overall_score']}/100 (Grade: {hi['grade']})",
+                f"Tier: {result['tier']} | Recommendation: {result['recommendation'].replace('_', ' ').title()}",
+                f"Skills: {hi['skill_score']}/100, Impact: {hi['impact_score']}/100",
+                f"Trajectory: {hi['trajectory_score']}/100, Experience: {hi['experience_score']}/100"
+            ]
+        else:
+            # Called before hiring_index is set - use direct values
+            parts = [
+                f"Hiring Index: {overall_score}/100 (Grade: {grade.value if grade else 'N/A'})",
+                f"Tier: {result.get('tier', 'N/A')} | Recommendation: {recommendation.value.replace('_', ' ').title() if recommendation else 'N/A'}",
+                f"Skills: {component_scores.get('skill', 0)}/100, Impact: {component_scores.get('impact', 0)}/100",
+                f"Trajectory: {component_scores.get('trajectory', 0)}/100, Experience: {component_scores.get('experience', 0)}/100"
+            ]
         
-        parts = [
-            f"Hiring Index: {hi['overall_score']}/100 (Grade: {hi['grade']})",
-            f"Tier: {result['tier']} | Recommendation: {result['recommendation'].replace('_', ' ').title()}",
-            f"Skills: {hi['skill_score']}/100, Impact: {hi['impact_score']}/100",
-            f"Trajectory: {hi['trajectory_score']}/100, Experience: {hi['experience_score']}/100"
-        ]
-        
-        if result["key_strengths"]:
+        if result.get("key_strengths"):
             parts.append(f"Key Strengths: {', '.join(result['key_strengths'][:3])}")
         
-        if result["key_concerns"]:
+        if result.get("key_concerns"):
             parts.append(f"Concerns: {', '.join(result['key_concerns'][:2])}")
         
         return ". ".join(parts)
