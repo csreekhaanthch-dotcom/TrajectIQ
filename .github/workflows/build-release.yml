@@ -28,23 +28,30 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd TrajectIQ
-          pip install -r requirements.txt
-          pip install pyinstaller
+          python -m pip install --upgrade pip
+          pip install pyinstaller bcrypt cryptography requests flask
 
       - name: Generate RSA keys
         run: |
-          cd TrajectIQ
           python -c "
-          import sys
-          sys.path.insert(0, 'src')
-          from security.license import LicenseManager
-          private_pem, public_pem = LicenseManager.generate_key_pair()
+          from cryptography.hazmat.primitives.asymmetric import rsa
+          from cryptography.hazmat.primitives import serialization
+          from cryptography.hazmat.backends import default_backend
           import os
-          os.makedirs('tools/keys', exist_ok=True)
-          with open('tools/keys/private_key.pem', 'w') as f:
+          os.makedirs('TrajectIQ/tools/keys', exist_ok=True)
+          private_key = rsa.generate_private_key(65537, 4096, default_backend())
+          private_pem = private_key.private_bytes(
+              serialization.Encoding.PEM,
+              serialization.PrivateFormat.PKCS8,
+              serialization.NoEncryption()
+          )
+          public_pem = private_key.public_key().public_bytes(
+              serialization.Encoding.PEM,
+              serialization.PublicFormat.SubjectPublicKeyInfo
+          )
+          with open('TrajectIQ/tools/keys/private_key.pem', 'wb') as f:
               f.write(private_pem)
-          with open('tools/keys/public_key.pem', 'w') as f:
+          with open('TrajectIQ/tools/keys/public_key.pem', 'wb') as f:
               f.write(public_pem)
           print('Keys generated successfully')
           "
@@ -65,13 +72,13 @@ jobs:
       - name: Create distribution package
         run: |
           cd TrajectIQ
-          mkdir -p dist/package
-          cp dist/TrajectIQ.exe dist/package/
-          cp -r docs dist/package/ 2>$null || true
-          cp README.md dist/package/
-          cp LICENSE dist/package/ 2>$null || true
-          cp -r tools dist/package/
-          Compress-Archive -Path dist/package/* -DestinationPath dist/TrajectIQ-Windows.zip
+          New-Item -ItemType Directory -Force -Path dist\package
+          Copy-Item dist\TrajectIQ.exe dist\package\
+          if (Test-Path docs) { Copy-Item -Recurse docs dist\package\ }
+          Copy-Item README.md dist\package\
+          if (Test-Path LICENSE) { Copy-Item LICENSE dist\package\ }
+          Copy-Item -Recurse tools dist\package\
+          Compress-Archive -Path dist\package\* -DestinationPath dist\TrajectIQ-Windows.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -92,23 +99,30 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd TrajectIQ
-          pip install -r requirements.txt
-          pip install pyinstaller
+          python -m pip install --upgrade pip
+          pip install pyinstaller bcrypt cryptography requests flask
 
       - name: Generate RSA keys
         run: |
-          cd TrajectIQ
           python -c "
-          import sys
-          sys.path.insert(0, 'src')
-          from security.license import LicenseManager
-          private_pem, public_pem = LicenseManager.generate_key_pair()
+          from cryptography.hazmat.primitives.asymmetric import rsa
+          from cryptography.hazmat.primitives import serialization
+          from cryptography.hazmat.backends import default_backend
           import os
-          os.makedirs('tools/keys', exist_ok=True)
-          with open('tools/keys/private_key.pem', 'w') as f:
+          os.makedirs('TrajectIQ/tools/keys', exist_ok=True)
+          private_key = rsa.generate_private_key(65537, 4096, default_backend())
+          private_pem = private_key.private_bytes(
+              serialization.Encoding.PEM,
+              serialization.PrivateFormat.PKCS8,
+              serialization.NoEncryption()
+          )
+          public_pem = private_key.public_key().public_bytes(
+              serialization.Encoding.PEM,
+              serialization.PublicFormat.SubjectPublicKeyInfo
+          )
+          with open('TrajectIQ/tools/keys/private_key.pem', 'wb') as f:
               f.write(private_pem)
-          with open('tools/keys/public_key.pem', 'w') as f:
+          with open('TrajectIQ/tools/keys/public_key.pem', 'wb') as f:
               f.write(public_pem)
           print('Keys generated successfully')
           "
@@ -179,16 +193,16 @@ jobs:
           body: |
             ## TrajectIQ Enterprise - Intelligence-Driven Hiring Platform
 
-            ### What's New
-            - Deterministic scoring engine (SDI, CSIG, IAE, CTA, ERR)
-            - Multi-user RBAC system
-            - Enterprise license management
-            - Bias detection & fairness monitoring
-            - Email & ATS integrations
+            ### Features
+            - **Deterministic Scoring Engine** - SDI, CSIG, IAE, CTA, ERR with full explainability
+            - **Multi-User RBAC** - Super Admin, HR Admin, Recruiter, Auditor roles
+            - **Enterprise License System** - RSA-4096 validation with machine fingerprint binding
+            - **Bias Detection** - Fairness monitoring and compliance reporting
+            - **Email & ATS Integrations** - IMAP, Greenhouse, Lever, Workable
 
             ### Downloads
-            - **Windows**: `TrajectIQ-Windows.zip` - Windows executable
-            - **Linux**: `TrajectIQ-Linux.zip` - Linux executable
+            - **TrajectIQ-Windows.zip** - Windows executable
+            - **TrajectIQ-Linux.zip** - Linux executable
 
             ### Quick Start
             1. Download and extract the package for your platform
