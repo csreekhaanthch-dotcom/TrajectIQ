@@ -1,8 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// TrajectIQ Enterprise - Prisma Schema
+// Intelligence-Driven Hiring Platform
 
 generator client {
   provider = "prisma-client-js"
@@ -13,20 +10,355 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============================================
+// USER MANAGEMENT (RBAC)
+// ============================================
+
+enum Role {
+  SUPER_ADMIN
+  HR_ADMIN
+  RECRUITER
+  AUDITOR
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
+  username  String   @unique
   name      String?
+  password  String
+  role      Role     @default(RECRUITER)
+  isActive  Boolean  @default(true)
+  
+  // Track failed login attempts
+  failedLoginAttempts Int    @default(0)
+  lockedUntil        DateTime?
+  lastLogin          DateTime?
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  // Relations
+  sessions       Session[]
+  candidates     Candidate[]
+  evaluations    Evaluation[]
+  auditLogs      AuditLog[]
+  createdJobs    Job[]        @relation("JobCreator")
+  
+  @@index([email])
+  @@index([username])
 }
 
-model Post {
-  id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Session {
+  id          String   @id @default(cuid())
+  sessionId   String   @unique
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ipAddress   String?
+  userAgent   String?
+  expiresAt   DateTime
+  lastActivity DateTime @default(now())
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  @@index([sessionId])
+  @@index([userId])
+}
+
+// ============================================
+// CANDIDATE MANAGEMENT
+// ============================================
+
+enum CandidateStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  ARCHIVED
+}
+
+model Candidate {
+  id            String         @id @default(cuid())
+  candidateId   String         @unique
+  firstName     String?
+  lastName      String?
+  email         String?
+  phone         String?
+  
+  // Resume data
+  resumePath    String?
+  resumeText    String?
+  resumeHash    String?
+  
+  // Source tracking
+  source        String         @default("manual") // manual, email, ats
+  sourceId      String?        // External ID from ATS
+  
+  // Job assignment
+  jobId         String?
+  job           Job?           @relation(fields: [jobId], references: [id])
+  status        CandidateStatus @default(PENDING)
+  
+  // Recruiter assignment
+  assignedRecruiterId String?
+  assignedRecruiter   User?    @relation(fields: [assignedRecruiterId], references: [id])
+  
+  // Evaluation results
+  score         Float?
+  grade         String?
+  tier          Int?
+  recommendation String?
+  
+  processedAt   DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  // Relations
+  evaluations   Evaluation[]
+  
+  @@index([email])
+  @@index([status])
+  @@index([jobId])
+}
+
+// ============================================
+// EVALUATION SYSTEM
+// ============================================
+
+enum EvaluationStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Evaluation {
+  id            String   @id @default(cuid())
+  evaluationId  String   @unique
+  candidateId   String
+  candidate     Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  jobId         String?
+  job           Job?     @relation(fields: [jobId], references: [id])
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  
+  // Evaluation mode
+  aiMode        String   @default("off") // off, advisory, full
+  
+  // Skill scores (SDI - Skill Depth Index)
+  skillScore    Float?
+  skillWeight   Float     @default(0.40)
+  skillDetails  String?   // JSON
+  
+  // Impact scores (IAE - Impact Authenticity Engine)
+  impactScore   Float?
+  impactWeight  Float     @default(0.20)
+  impactDetails String?   // JSON
+  
+  // Trajectory scores (CTA - Career Trajectory Analyzer)
+  trajectoryScore  Float?
+  trajectoryWeight Float  @default(0.15)
+  trajectoryDetails String? // JSON
+  
+  // Experience scores (ERR - Experience Relevance Ratio)
+  experienceScore  Float?
+  experienceWeight Float  @default(0.10)
+  experienceDetails String? // JSON
+  
+  // CSIG - Critical Skill Integrity Gate
+  csigScore     Float?
+  csigWeight    Float     @default(0.15)
+  csigDetails   String?   // JSON
+  
+  // AI detection (advisory only)
+  aiDetectionScore Float?
+  aiDetectionDetails String? // JSON
+  
+  // Final scores
+  hiringIndex   Float?
+  grade         String?
+  tier          Int?
+  recommendation String?
+  
+  // Key findings
+  strengths     String?   // JSON array
+  concerns      String?   // JSON array
+  explanation   String?   // Full explainability report
+  
+  // Processing metadata
+  processingTimeMs Float?
+  aiEnhanced      Boolean @default(false)
+  status          EvaluationStatus @default(PENDING)
+  
+  // Audit
+  inputHash     String?
+  outputHash    String?
+  
+  createdAt     DateTime  @default(now())
+  
+  // Relations
+  riskFlags     RiskFlag[]
+  
+  @@index([candidateId])
+  @@index([userId])
+  @@index([hiringIndex])
+  @@index([createdAt])
+}
+
+model RiskFlag {
+  id            String   @id @default(cuid())
+  evaluationId  String
+  evaluation    Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  flagType      String   // job_hopping, ai_detected, skill_gap, etc.
+  severity      String   // info, warning, critical
+  description   String?
+  details       String?  // JSON
+  createdAt     DateTime @default(now())
+  
+  @@index([evaluationId])
+  @@index([flagType])
+}
+
+// ============================================
+// JOB MANAGEMENT
+// ============================================
+
+enum JobStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+model Job {
+  id            String   @id @default(cuid())
+  jobId         String   @unique
+  title         String
+  department    String?
+  location      String?
+  description   String?
+  requirements  String?  // JSON array of required skills
+  
+  status        JobStatus @default(OPEN)
+  
+  createdById   String?
+  createdBy     User?    @relation("JobCreator", fields: [createdById], references: [id])
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  candidates    Candidate[]
+  evaluations   Evaluation[]
+  
+  @@index([status])
+  @@index([department])
+}
+
+// ============================================
+// AUDIT & COMPLIANCE
+// ============================================
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  sessionId   String?
+  action      String
+  entityType  String?  // user, candidate, evaluation, etc.
+  entityId    String?
+  details     String?  // JSON
+  ipAddress   String?
+  inputHash   String?
+  outputHash  String?
+  createdAt   DateTime @default(now())
+  
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model BiasMetric {
+  id                  String   @id @default(cuid())
+  analysisDate        DateTime @unique
+  totalEvaluations    Int      @default(0)
+  
+  // Score distribution (JSON)
+  scoreDistribution   String?
+  
+  // Potential bias flags (JSON)
+  potentialBiasFlags  String?
+  fairnessScore       Float?
+  
+  // Recommendations (JSON)
+  recommendations     String?
+  
+  createdAt           DateTime @default(now())
+  
+  @@index([analysisDate])
+}
+
+// ============================================
+// ANALYTICS
+// ============================================
+
+model AnalyticsEvent {
+  id          String   @id @default(cuid())
+  eventType   String
+  userId      String?
+  details     String?  // JSON
+  createdAt   DateTime @default(now())
+  
+  @@index([eventType])
+  @@index([createdAt])
+}
+
+// ============================================
+// INTEGRATIONS
+// ============================================
+
+model EmailQueue {
+  id              String   @id @default(cuid())
+  emailId         String   @unique
+  sender          String?
+  subject         String?
+  receivedAt      DateTime?
+  processedAt     DateTime?
+  status          String   @default("pending")
+  resumeExtracted Boolean  @default(false)
+  candidateId     String?
+  errorMessage    String?
+  createdAt       DateTime @default(now())
+  
+  @@index([status])
+}
+
+model ATSSyncLog {
+  id              String   @id @default(cuid())
+  provider        String   // greenhouse, lever, workable
+  syncType        String   // full, incremental
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  status          String   @default("running")
+  recordsProcessed Int     @default(0)
+  recordsCreated  Int      @default(0)
+  recordsUpdated  Int      @default(0)
+  errorMessage    String?
+  
+  @@index([provider])
+  @@index([startedAt])
+}
+
+// ============================================
+// CONFIGURATION
+// ============================================
+
+model ConfigVersion {
+  id                String   @id @default(cuid())
+  version           Int
+  configHash        String
+  changedById       String?
+  changedAt         DateTime @default(now())
+  changeDescription String?
+  
+  @@index([version])
 }
