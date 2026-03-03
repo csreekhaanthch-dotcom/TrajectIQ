@@ -45,47 +45,26 @@ jobs:
           pip install pyinstaller
 
       - name: Generate RSA keys for license signing
-        shell: python
         run: |
-          import sys
-          sys.path.insert(0, 'TrajectIQ')
+          python -c "
           from pathlib import Path
           Path('TrajectIQ/tools/keys').mkdir(parents=True, exist_ok=True)
-          
-          # Generate RSA key pair
           from cryptography.hazmat.primitives.asymmetric import rsa
           from cryptography.hazmat.primitives import serialization
           from cryptography.hazmat.backends import default_backend
-          
-          private_key = rsa.generate_private_key(
-              public_exponent=65537,
-              key_size=4096,
-              backend=default_backend()
-          )
+          private_key = rsa.generate_private_key(public_exponent=65537, key_size=4096, backend=default_backend())
           public_key = private_key.public_key()
-          
-          # Save private key
-          private_pem = private_key.private_bytes(
-              encoding=serialization.Encoding.PEM,
-              format=serialization.PrivateFormat.PKCS8,
-              encryption_algorithm=serialization.NoEncryption()
-          )
+          private_pem = private_key.private_bytes(encoding=serialization.Encoding.PEM, format=serialization.PrivateFormat.PKCS8, encryption_algorithm=serialization.NoEncryption())
           Path('TrajectIQ/tools/keys/private_key.pem').write_bytes(private_pem)
-          
-          # Save public key
-          public_pem = public_key.public_bytes(
-              encoding=serialization.Encoding.PEM,
-              format=serialization.PublicFormat.SubjectPublicKeyInfo
-          )
+          public_pem = public_key.public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.SubjectPublicKeyInfo)
           Path('TrajectIQ/tools/keys/public_key.pem').write_bytes(public_pem)
-          
           print('RSA keys generated successfully')
+          "
 
       - name: Build executable with PyInstaller
         run: |
           cd TrajectIQ
           pyinstaller --onefile --windowed --name "TrajectIQ" --clean --noconfirm --hidden-import=cryptography --hidden-import=cryptography.fernet --hidden-import=cryptography.hazmat.primitives --hidden-import=cryptography.hazmat.primitives.asymmetric --hidden-import=cryptography.hazmat.backends --hidden-import=bcrypt --hidden-import=PyQt5 --hidden-import=PyQt5.QtCore --hidden-import=PyQt5.QtGui --hidden-import=PyQt5.QtWidgets --add-data "tools/keys/public_key.pem;tools/keys" src/main.py
-        shell: cmd
 
       - name: Verify build
         run: |
@@ -96,7 +75,6 @@ jobs:
             Write-Error "Build failed - executable not found"
             exit 1
           }
-        shell: powershell
 
       - name: Get version
         id: version
@@ -110,45 +88,20 @@ jobs:
           }
           echo "version=$version" >> $env:GITHUB_OUTPUT
           Write-Host "Version: $version"
-        shell: powershell
 
       - name: Create distribution package
         run: |
           $version = "${{ steps.version.outputs.version }}"
           $distDir = "TrajectIQ/dist/TrajectIQ-$version"
           New-Item -ItemType Directory -Path $distDir -Force
-          
           Copy-Item "TrajectIQ/dist/TrajectIQ.exe" $distDir
           Copy-Item "TrajectIQ/README.md" $distDir -ErrorAction SilentlyContinue
           Copy-Item "TrajectIQ/LICENSE" $distDir -ErrorAction SilentlyContinue
-          if (Test-Path "TrajectIQ/docs") {
-            Copy-Item "TrajectIQ/docs" -Destination "$distDir/docs" -Recurse
-          }
-          
-          # Create quick start guide
-          $quickStart = @"
-          TrajectIQ Enterprise v$version
-          ================================
-          
-          Quick Start:
-          1. Run TrajectIQ.exe to launch the application
-          2. On first run, you will see the license activation screen
-          3. Click 'Show Fingerprint' to get your machine ID
-          4. Contact support@trajectiq.com for license activation
-          
-          Command Line Options:
-          - TrajectIQ.exe --version        Show version info
-          - TrajectIQ.exe --fingerprint    Show machine fingerprint
-          - TrajectIQ.exe --gui            Launch GUI (default)
-          - TrajectIQ.exe --evaluate FILE  Evaluate a resume file
-          
-          Support: support@trajectiq.com
-          "@
+          if (Test-Path "TrajectIQ/docs") { Copy-Item "TrajectIQ/docs" -Destination "$distDir/docs" -Recurse }
+          $quickStart = "TrajectIQ Enterprise v$version`n================================`n`nQuick Start:`n1. Run TrajectIQ.exe to launch the application`n2. On first run, you will see the license activation screen`n3. Click 'Show Fingerprint' to get your machine ID`n4. Contact support@trajectiq.com for license activation`n`nSupport: support@trajectiq.com"
           $quickStart | Out-File -FilePath "$distDir/QUICKSTART.txt" -Encoding UTF8
-          
           Compress-Archive -Path $distDir -DestinationPath "TrajectIQ/dist/TrajectIQ-$version-win-x64.zip"
           Write-Host "Package created: TrajectIQ-$version-win-x64.zip"
-        shell: powershell
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -165,29 +118,29 @@ jobs:
           name: TrajectIQ Enterprise v${{ steps.version.outputs.version }}
           body: |
             ## TrajectIQ Enterprise v${{ steps.version.outputs.version }}
-            
+
             ### Intelligence-Driven Hiring Platform
-            
+
             **Features:**
             - Deterministic resume evaluation with multi-factor scoring
             - Enterprise-grade security (RSA license validation, encryption)
             - Role-based access control (RBAC)
             - Bias detection and fairness monitoring
             - Optional AI enhancement layer
-            
+
             **What's Included:**
             - `TrajectIQ.exe` - Standalone Windows executable
             - Documentation and quick start guide
-            
+
             **System Requirements:**
             - Windows 10/11 (64-bit)
             - No additional dependencies required
-            
+
             ### Installation
             1. Download and extract the ZIP file
             2. Run `TrajectIQ.exe`
             3. Activate your license
-            
+
             ### Support
             - Technical: support@trajectiq.com
             - License: license-support@trajectiq.com
@@ -217,7 +170,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libxcb-xinerama0 libxcb-cursor0 libgl1-mesa-glx
+          sudo apt-get install -y libxcb-xinerama0 libxcb-cursor0 libgl1-mesa-glx libegl1 libdbus-1-3
 
       - name: Install Python dependencies
         run: |
@@ -226,38 +179,21 @@ jobs:
           pip install pyinstaller
 
       - name: Generate RSA keys
-        shell: python
         run: |
-          import sys
-          sys.path.insert(0, 'TrajectIQ')
+          python -c "
           from pathlib import Path
           Path('TrajectIQ/tools/keys').mkdir(parents=True, exist_ok=True)
-          
           from cryptography.hazmat.primitives.asymmetric import rsa
           from cryptography.hazmat.primitives import serialization
           from cryptography.hazmat.backends import default_backend
-          
-          private_key = rsa.generate_private_key(
-              public_exponent=65537,
-              key_size=4096,
-              backend=default_backend()
-          )
+          private_key = rsa.generate_private_key(public_exponent=65537, key_size=4096, backend=default_backend())
           public_key = private_key.public_key()
-          
-          private_pem = private_key.private_bytes(
-              encoding=serialization.Encoding.PEM,
-              format=serialization.PrivateFormat.PKCS8,
-              encryption_algorithm=serialization.NoEncryption()
-          )
+          private_pem = private_key.private_bytes(encoding=serialization.Encoding.PEM, format=serialization.PrivateFormat.PKCS8, encryption_algorithm=serialization.NoEncryption())
           Path('TrajectIQ/tools/keys/private_key.pem').write_bytes(private_pem)
-          
-          public_pem = public_key.public_bytes(
-              encoding=serialization.Encoding.PEM,
-              format=serialization.PublicFormat.SubjectPublicKeyInfo
-          )
+          public_pem = public_key.public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.SubjectPublicKeyInfo)
           Path('TrajectIQ/tools/keys/public_key.pem').write_bytes(public_pem)
-          
           print('RSA keys generated successfully')
+          "
 
       - name: Build executable
         run: |
@@ -282,12 +218,10 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           DIST_DIR="TrajectIQ/dist/TrajectIQ-$VERSION-linux"
           mkdir -p "$DIST_DIR"
-          
           cp TrajectIQ/dist/TrajectIQ "$DIST_DIR/" 2>/dev/null || true
           cp TrajectIQ/README.md "$DIST_DIR/" 2>/dev/null || true
           cp TrajectIQ/LICENSE "$DIST_DIR/" 2>/dev/null || true
           cp -r TrajectIQ/docs "$DIST_DIR/" 2>/dev/null || true
-          
           tar -czvf TrajectIQ/dist/TrajectIQ-$VERSION-linux-x64.tar.gz -C TrajectIQ/dist TrajectIQ-$VERSION-linux
 
       - name: Upload artifact
