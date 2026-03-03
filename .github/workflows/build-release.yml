@@ -1,0 +1,208 @@
+name: Build and Release TrajectIQ
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.0.0)'
+        required: true
+        default: '1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          cd TrajectIQ
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Generate RSA keys
+        run: |
+          cd TrajectIQ
+          python -c "
+          import sys
+          sys.path.insert(0, 'src')
+          from security.license import LicenseManager
+          private_pem, public_pem = LicenseManager.generate_key_pair()
+          import os
+          os.makedirs('tools/keys', exist_ok=True)
+          with open('tools/keys/private_key.pem', 'w') as f:
+              f.write(private_pem)
+          with open('tools/keys/public_key.pem', 'w') as f:
+              f.write(public_pem)
+          print('Keys generated successfully')
+          "
+
+      - name: Build executable
+        run: |
+          cd TrajectIQ
+          pyinstaller --onefile --windowed --name TrajectIQ --clean --noconfirm `
+            --hidden-import cryptography `
+            --hidden-import cryptography.fernet `
+            --hidden-import cryptography.hazmat.primitives `
+            --hidden-import cryptography.hazmat.primitives.asymmetric `
+            --hidden-import cryptography.hazmat.backends `
+            --hidden-import bcrypt `
+            --add-data "tools/keys/public_key.pem;keys" `
+            src/main.py
+
+      - name: Create distribution package
+        run: |
+          cd TrajectIQ
+          mkdir -p dist/package
+          cp dist/TrajectIQ.exe dist/package/
+          cp -r docs dist/package/ 2>$null || true
+          cp README.md dist/package/
+          cp LICENSE dist/package/ 2>$null || true
+          cp -r tools dist/package/
+          Compress-Archive -Path dist/package/* -DestinationPath dist/TrajectIQ-Windows.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrajectIQ-Windows
+          path: TrajectIQ/dist/TrajectIQ-Windows.zip
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          cd TrajectIQ
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Generate RSA keys
+        run: |
+          cd TrajectIQ
+          python -c "
+          import sys
+          sys.path.insert(0, 'src')
+          from security.license import LicenseManager
+          private_pem, public_pem = LicenseManager.generate_key_pair()
+          import os
+          os.makedirs('tools/keys', exist_ok=True)
+          with open('tools/keys/private_key.pem', 'w') as f:
+              f.write(private_pem)
+          with open('tools/keys/public_key.pem', 'w') as f:
+              f.write(public_pem)
+          print('Keys generated successfully')
+          "
+
+      - name: Build executable
+        run: |
+          cd TrajectIQ
+          pyinstaller --onefile --name TrajectIQ --clean --noconfirm \
+            --hidden-import cryptography \
+            --hidden-import cryptography.fernet \
+            --hidden-import cryptography.hazmat.primitives \
+            --hidden-import cryptography.hazmat.primitives.asymmetric \
+            --hidden-import cryptography.hazmat.backends \
+            --hidden-import bcrypt \
+            --add-data "tools/keys/public_key.pem:keys" \
+            src/main.py
+
+      - name: Create distribution package
+        run: |
+          cd TrajectIQ
+          mkdir -p dist/package
+          cp dist/TrajectIQ dist/package/
+          cp -r docs dist/package/ 2>/dev/null || true
+          cp README.md dist/package/
+          cp LICENSE dist/package/ 2>/dev/null || true
+          cp -r tools dist/package/
+          cd dist && zip -r TrajectIQ-Linux.zip package/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrajectIQ-Linux
+          path: TrajectIQ/dist/TrajectIQ-Linux.zip
+
+  create-release:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: TrajectIQ-Windows
+          path: ./artifacts/
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: TrajectIQ-Linux
+          path: ./artifacts/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.VERSION }}
+          name: TrajectIQ Enterprise v${{ steps.version.outputs.VERSION }}
+          body: |
+            ## TrajectIQ Enterprise - Intelligence-Driven Hiring Platform
+
+            ### What's New
+            - Deterministic scoring engine (SDI, CSIG, IAE, CTA, ERR)
+            - Multi-user RBAC system
+            - Enterprise license management
+            - Bias detection & fairness monitoring
+            - Email & ATS integrations
+
+            ### Downloads
+            - **Windows**: `TrajectIQ-Windows.zip` - Windows executable
+            - **Linux**: `TrajectIQ-Linux.zip` - Linux executable
+
+            ### Quick Start
+            1. Download and extract the package for your platform
+            2. Run `TrajectIQ.exe` (Windows) or `./TrajectIQ` (Linux)
+            3. Use the License Generator tool to create a license key
+            4. Activate the application with your license
+
+            ### Documentation
+            See the included `docs/` folder for deployment and security guides.
+
+          files: |
+            artifacts/TrajectIQ-Windows.zip
+            artifacts/TrajectIQ-Linux.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
