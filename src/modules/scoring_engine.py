@@ -120,10 +120,15 @@ class BaseEvaluator(ABC):
     @staticmethod
     def ensure_json_serializable(obj: Any) -> Any:
         """Ensure object is JSON serializable"""
+        from dataclasses import asdict, is_dataclass
+        
         if isinstance(obj, (date, datetime)):
             return obj.isoformat()
         elif isinstance(obj, Enum):
             return obj.value
+        elif is_dataclass(obj) and not isinstance(obj, type):
+            # Convert dataclass to dict
+            return {k: BaseEvaluator.ensure_json_serializable(v) for k, v in asdict(obj).items()}
         elif isinstance(obj, dict):
             return {k: BaseEvaluator.ensure_json_serializable(v) for k, v in obj.items()}
         elif isinstance(obj, list):
