@@ -8,8 +8,10 @@ import bcrypt
 import secrets
 import hashlib
 import uuid
+import sqlite3
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Set, Any
+from pathlib import Path
+from typing import Optional, List, Dict, Set, Any, Tuple
 from enum import Enum
 from dataclasses import dataclass
 from functools import wraps
@@ -669,11 +671,6 @@ class RBACManager:
     def get_current_session(self) -> Optional[Session]:
         """Get current session"""
         return self._current_session
-
-
-# Import Tuple for type hints
-from typing import Tuple
-from pathlib import Path
 
 
 # Global RBAC manager

@@ -11,8 +11,9 @@ import hashlib
 import logging
 import platform
 import subprocess
+import json
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, List
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum

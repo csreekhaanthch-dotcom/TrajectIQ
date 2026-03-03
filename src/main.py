@@ -10,6 +10,7 @@ import sys
 import os
 import argparse
 from pathlib import Path
+from typing import Optional
 
 # Add src to path
 src_path = Path(__file__).parent
