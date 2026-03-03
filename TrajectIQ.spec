@@ -9,8 +9,8 @@ import sys
 import os
 from pathlib import Path
 
-# Get the project root - SPECPATH is provided by PyInstaller as a string
-project_root = Path(SPECPATH) if 'SPECPATH' in dir() else Path(os.getcwd())
+# SPECPATH is automatically provided by PyInstaller as the directory containing this spec file
+project_root = Path(SPECPATH)
 
 block_cipher = None
 
@@ -40,9 +40,8 @@ hiddenimports = [
     'PyQt5.QtGui',
     'PyQt5.QtWidgets',
     'PyQt5.sip',
-    'PyQt5.QtDBus',
     
-    # Application modules (imported from src directory via pathex)
+    # Application modules (from src directory)
     'security',
     'security.license',
     'security.rbac',
@@ -75,7 +74,6 @@ hiddenimports = [
     'charset_normalizer',
     'idna',
     'certifi',
-    'hmac',
     
     # Standard library
     'sqlite3',
@@ -100,15 +98,10 @@ hiddenimports = [
 # ============================================================
 datas = []
 
-# Add public key
+# Add public key for license validation
 public_key = project_root / 'tools' / 'keys' / 'public_key.pem'
 if public_key.exists():
     datas.append((str(public_key), 'tools/keys'))
-
-# Add docs if exists
-docs_dir = project_root / 'docs'
-if docs_dir.exists():
-    datas.append((str(docs_dir), 'docs'))
 
 # ============================================================
 # Binaries
@@ -116,14 +109,13 @@ if docs_dir.exists():
 binaries = []
 
 # ============================================================
-# Analysis - scan all source files
-# pathex includes src directory so modules can be found
+# Analysis
 # ============================================================
 a = Analysis(
     [str(project_root / 'src' / 'main.py')],
     pathex=[
-        str(project_root),          # Project root
-        str(project_root / 'src'),  # src directory for module imports
+        str(project_root),
+        str(project_root / 'src'),
     ],
     binaries=binaries,
     datas=datas,
@@ -178,7 +170,7 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,  # Set to True for debugging
+    console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
