@@ -12,10 +12,33 @@ import argparse
 from pathlib import Path
 from typing import Optional
 
+# Handle PyInstaller bundled path
+def get_bundle_path():
+    """Get the base path for bundled resources"""
+    if getattr(sys, 'frozen', False):
+        # Running as compiled executable
+        return Path(sys._MEIPASS)
+    else:
+        # Running as script
+        return Path(__file__).parent.parent
+
 # Add src to path
 src_path = Path(__file__).parent
 if str(src_path) not in sys.path:
     sys.path.insert(0, str(src_path))
+
+
+def show_error_dialog(title: str, message: str):
+    """Show an error dialog using PyQt5"""
+    try:
+        from PyQt5.QtWidgets import QApplication, QMessageBox
+        app = QApplication.instance()
+        if app is None:
+            app = QApplication(sys.argv)
+        QMessageBox.critical(None, title, message)
+    except Exception:
+        # Fallback to console
+        print(f"\n{title}: {message}\n")
 
 
 def show_fingerprint():
@@ -43,6 +66,29 @@ Copyright (c) 2024 TrajectIQ. All rights reserved.
 Licensed under the terms of your license agreement.
 For support: support@trajectiq.com
 """)
+
+
+def load_embedded_public_key():
+    """Load the public key from bundled resources"""
+    try:
+        bundle_path = get_bundle_path()
+        public_key_path = bundle_path / "tools" / "keys" / "public_key.pem"
+        
+        if public_key_path.exists():
+            public_key_pem = public_key_path.read_text()
+            
+            # Set it in the license manager
+            from security.license import get_license_manager
+            lm = get_license_manager()
+            lm.set_public_key(public_key_pem)
+            print(f"Loaded public key from: {public_key_path}")
+            return True
+        else:
+            print(f"Warning: Public key not found at: {public_key_path}")
+            return False
+    except Exception as e:
+        print(f"Error loading public key: {e}")
+        return False
 
 
 def run_cli():
@@ -115,6 +161,9 @@ def run_cli_evaluation(resume_path: str, requirements_path: Optional[str], outpu
     from modules.scoring_engine import run_full_evaluation
     from core.database import get_database
     
+    # Load public key first
+    load_embedded_public_key()
+    
     # Check license
     from security.license import get_license_manager, LicenseStatus
     
@@ -183,11 +232,20 @@ def run_cli_evaluation(resume_path: str, requirements_path: Optional[str], outpu
 def run_gui():
     """Launch GUI application"""
     try:
+        # Load embedded public key first
+        load_embedded_public_key()
+        
         from ui.main_window import run_application
         return run_application()
     except ImportError as e:
-        print(f"Error: GUI dependencies not available: {e}")
-        print("Please ensure PyQt5 is installed: pip install PyQt5")
+        error_msg = f"Error: GUI dependencies not available: {e}\n\nPlease ensure PyQt5 is installed: pip install PyQt5"
+        print(error_msg)
+        show_error_dialog("Import Error", error_msg)
+        return 1
+    except Exception as e:
+        error_msg = f"Error starting application: {e}"
+        print(error_msg)
+        show_error_dialog("Startup Error", error_msg)
         return 1
 
 
@@ -199,7 +257,9 @@ def main():
         print("\nOperation cancelled.")
         return 130
     except Exception as e:
-        print(f"Error: {e}")
+        error_msg = f"Error: {e}"
+        print(error_msg)
+        show_error_dialog("Error", error_msg)
         return 1
 
 

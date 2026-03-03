@@ -63,7 +63,7 @@ jobs:
 
       - name: Build executable with PyInstaller
         run: |
-          pyinstaller --onefile --windowed --name "TrajectIQ" --clean --noconfirm --hidden-import=cryptography --hidden-import=cryptography.fernet --hidden-import=cryptography.hazmat.primitives --hidden-import=cryptography.hazmat.primitives.asymmetric --hidden-import=cryptography.hazmat.backends --hidden-import=bcrypt --hidden-import=PyQt5 --hidden-import=PyQt5.QtCore --hidden-import=PyQt5.QtGui --hidden-import=PyQt5.QtWidgets --add-data "tools/keys/public_key.pem;tools/keys" src/main.py
+          pyinstaller --onefile --name "TrajectIQ" --clean --noconfirm --hidden-import=cryptography --hidden-import=cryptography.fernet --hidden-import=cryptography.hazmat.primitives --hidden-import=cryptography.hazmat.primitives.asymmetric --hidden-import=cryptography.hazmat.backends --hidden-import=bcrypt --hidden-import=PyQt5 --hidden-import=PyQt5.QtCore --hidden-import=PyQt5.QtGui --hidden-import=PyQt5.QtWidgets --hidden-import=PyQt5.sip --hidden-import=security --hidden-import=security.license --hidden-import=security.rbac --hidden-import=security.integrity --hidden-import=modules --hidden-import=modules.scoring_engine --hidden-import=modules.bias_detection --hidden-import=modules.experience_relevance --hidden-import=core --hidden-import=core.database --hidden-import=core.config --hidden-import=ui --hidden-import=ui.main_window --hidden-import=connectors --hidden-import=connectors.ats_connector --hidden-import=connectors.email_connector --hidden-import=ai_enhancement --hidden-import=ai_enhancement.semantic_layer --add-data "tools/keys/public_key.pem;tools/keys" src/main.py
 
       - name: Verify build
         run: |
@@ -196,7 +196,7 @@ jobs:
 
       - name: Build executable
         run: |
-          pyinstaller --onefile --name "TrajectIQ" --clean --noconfirm --hidden-import=cryptography --hidden-import=cryptography.fernet --hidden-import=cryptography.hazmat.primitives --hidden-import=cryptography.hazmat.primitives.asymmetric --hidden-import=cryptography.hazmat.backends --hidden-import=bcrypt --hidden-import=PyQt5 --hidden-import=PyQt5.QtCore --hidden-import=PyQt5.QtGui --hidden-import=PyQt5.QtWidgets --add-data "tools/keys/public_key.pem:tools/keys" src/main.py
+          pyinstaller --onefile --name "TrajectIQ" --clean --noconfirm --hidden-import=cryptography --hidden-import=cryptography.fernet --hidden-import=cryptography.hazmat.primitives --hidden-import=cryptography.hazmat.primitives.asymmetric --hidden-import=cryptography.hazmat.backends --hidden-import=bcrypt --hidden-import=PyQt5 --hidden-import=PyQt5.QtCore --hidden-import=PyQt5.QtGui --hidden-import=PyQt5.QtWidgets --hidden-import=PyQt5.sip --hidden-import=security --hidden-import=security.license --hidden-import=security.rbac --hidden-import=security.integrity --hidden-import=modules --hidden-import=modules.scoring_engine --hidden-import=modules.bias_detection --hidden-import=modules.experience_relevance --hidden-import=core --hidden-import=core.database --hidden-import=core.config --hidden-import=ui --hidden-import=ui.main_window --hidden-import=connectors --hidden-import=connectors.ats_connector --hidden-import=connectors.email_connector --hidden-import=ai_enhancement --hidden-import=ai_enhancement.semantic_layer --add-data "tools/keys/public_key.pem:tools/keys" src/main.py
 
       - name: Get version
         id: version
