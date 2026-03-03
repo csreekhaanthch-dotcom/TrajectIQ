@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrajectIQ - Candidate Evaluation Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .gradient-text { background: linear-gradient(135deg, #6366f1 0%, #14b8a6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .card { background: white; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+        .progress-bar { transition: width 1s ease-out; }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
+    
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-teal-500 flex items-center justify-center">
+                    <span class="text-white font-bold text-lg">TI</span>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold gradient-text">TrajectIQ</h1>
+                    <p class="text-xs text-slate-500">Intelligence-Driven Hiring</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="text-sm text-slate-500">Evaluation ID: EVAL-2024-001</span>
+                <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium">Complete</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-6 py-8">
+        
+        <!-- Hero Score Card -->
+        <div class="card p-8 mb-8">
+            <div class="flex flex-col md:flex-row items-center gap-8">
+                <!-- Avatar & Info -->
+                <div class="flex-shrink-0 text-center md:text-left">
+                    <div class="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-teal-500 flex items-center justify-center text-white text-3xl font-bold mb-4 mx-auto md:mx-0">
+                        MZ
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-800">Michael Zhang</h2>
+                    <p class="text-slate-500">Principal Software Engineer</p>
+                    <p class="text-sm text-slate-400 mt-1">Mountain View, CA</p>
+                </div>
+                
+                <!-- Score Circle -->
+                <div class="flex-grow flex justify-center">
+                    <div class="relative">
+                        <svg class="w-48 h-48 transform -rotate-90">
+                            <circle cx="96" cy="96" r="88" fill="none" stroke="#e2e8f0" stroke-width="12"/>
+                            <circle cx="96" cy="96" r="88" fill="none" stroke="url(#gradient)" stroke-width="12" stroke-linecap="round" stroke-dasharray="553" stroke-dashoffset="116"/>
+                            <defs>
+                                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#6366f1"/>
+                                    <stop offset="100%" stop-color="#14b8a6"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span class="text-5xl font-bold text-slate-800">79</span>
+                            <span class="text-slate-500">out of 100</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recommendation -->
+                <div class="flex-shrink-0 text-center md:text-right">
+                    <div class="inline-block px-6 py-3 bg-gradient-to-r from-indigo-500 to-teal-500 rounded-2xl text-white mb-3">
+                        <div class="text-2xl font-bold">Grade B</div>
+                        <div class="text-sm opacity-90">Tier 2 Strong Candidate</div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="text-lg font-semibold text-emerald-600">✅ RECOMMEND</div>
+                        <div class="text-sm text-slate-500">80% Confidence</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="card p-5">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                    </div>
+                    <span class="text-slate-500 text-sm">Skills</span>
+                </div>
+                <div class="text-3xl font-bold text-slate-800">100<span class="text-lg text-slate-400">/100</span></div>
+                <div class="text-xs text-emerald-600 mt-1">✅ All critical skills met</div>
+            </div>
+            
+            <div class="card p-5">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                    </div>
+                    <span class="text-slate-500 text-sm">Impact</span>
+                </div>
+                <div class="text-3xl font-bold text-slate-800">61<span class="text-lg text-slate-400">/100</span></div>
+                <div class="text-xs text-slate-500 mt-1">4 achievements analyzed</div>
+            </div>
+            
+            <div class="card p-5">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                    </div>
+                    <span class="text-slate-500 text-sm">Trajectory</span>
+                </div>
+                <div class="text-3xl font-bold text-slate-800">58<span class="text-lg text-slate-400">/100</span></div>
+                <div class="text-xs text-slate-500 mt-1">8 years experience</div>
+            </div>
+            
+            <div class="card p-5">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-10 h-10 rounded-lg bg-rose-100 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                    </div>
+                    <span class="text-slate-500 text-sm">AI Risk</span>
+                </div>
+                <div class="text-3xl font-bold text-slate-800">32<span class="text-lg text-slate-400">%</span></div>
+                <div class="text-xs text-emerald-600 mt-1">✅ Low risk - authentic</div>
+            </div>
+        </div>
+
+        <!-- Detailed Sections -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            
+            <!-- Skills Detail -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">🔧</span>
+                    Skills Evaluation
+                </h3>
+                
+                <div class="space-y-4">
+                    <!-- Python -->
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="font-medium text-slate-700">Python <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full ml-1">CRITICAL</span></span>
+                            <span class="text-emerald-600 font-medium">95%</span>
+                        </div>
+                        <div class="h-3 bg-slate-100 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-indigo-500 to-teal-500 rounded-full progress-bar" style="width: 95%"></div>
+                        </div>
+                        <div class="text-xs text-slate-500 mt-1">✅ Expert (12 yrs) → Required: Advanced (5 yrs)</div>
+                    </div>
+                    
+                    <!-- Kubernetes -->
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="font-medium text-slate-700">Kubernetes <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full ml-1">CRITICAL</span></span>
+                            <span class="text-emerald-600 font-medium">95%</span>
+                        </div>
+                        <div class="h-3 bg-slate-100 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-indigo-500 to-teal-500 rounded-full progress-bar" style="width: 95%"></div>
+                        </div>
+                        <div class="text-xs text-slate-500 mt-1">✅ Expert (7 yrs) → Required: Intermediate (3 yrs)</div>
+                    </div>
+                    
+                    <!-- AWS -->
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="font-medium text-slate-700">AWS</span>
+                            <span class="text-emerald-600 font-medium">95%</span>
+                        </div>
+                        <div class="h-3 bg-slate-100 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-indigo-500 to-teal-500 rounded-full progress-bar" style="width: 95%"></div>
+                        </div>
+                        <div class="text-xs text-slate-500 mt-1">✅ Expert (10 yrs) → Required: Intermediate (3 yrs)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Impact Detail -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600">📈</span>
+                    Impact Analysis
+                </h3>
+                
+                <div class="space-y-4">
+                    <div class="p-3 bg-slate-50 rounded-xl">
+                        <div class="flex items-start gap-3">
+                            <span class="text-2xl">📊</span>
+                            <div>
+                                <p class="text-sm text-slate-700">Led migration of 200+ microservices to Kubernetes, reducing deployment time by 70%</p>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">Quantified</span>
+                                    <span class="text-xs text-slate-500">Score: 65/100</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 bg-slate-50 rounded-xl">
+                        <div class="flex items-start gap-3">
+                            <span class="text-2xl">💰</span>
+                            <div>
+                                <p class="text-sm text-slate-700">Architected payment system processing $500B annually with 99.99% uptime</p>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">High Impact</span>
+                                    <span class="text-xs text-slate-500">Score: 65/100</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 bg-slate-50 rounded-xl">
+                        <div class="flex items-start gap-3">
+                            <span class="text-2xl">📉</span>
+                            <div>
+                                <p class="text-sm text-slate-700">Reduced infrastructure costs by 60%, saving $2M annually</p>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Cost Savings</span>
+                                    <span class="text-xs text-slate-500">Score: 65/100</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Career Timeline -->
+        <div class="card p-6 mb-8">
+            <h3 class="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+                <span class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600">🔄</span>
+                Career Trajectory
+            </h3>
+            
+            <div class="relative">
+                <!-- Timeline -->
+                <div class="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-indigo-500 to-teal-500"></div>
+                
+                <div class="space-y-6 ml-12">
+                    <!-- Stripe -->
+                    <div class="relative">
+                        <div class="absolute -left-10 w-6 h-6 rounded-full bg-indigo-500 border-4 border-white shadow"></div>
+                        <div class="p-4 bg-gradient-to-r from-indigo-50 to-transparent rounded-xl border border-indigo-100">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-semibold text-slate-800">Principal Engineer</h4>
+                                    <p class="text-indigo-600 font-medium">Stripe</p>
+                                </div>
+                                <span class="text-sm text-slate-500 bg-white px-3 py-1 rounded-full shadow-sm">2020 - Present</span>
+                            </div>
+                            <p class="text-sm text-slate-600 mt-2">Led platform team of 12 engineers. Migrated 200+ microservices to Kubernetes.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Google -->
+                    <div class="relative">
+                        <div class="absolute -left-10 w-6 h-6 rounded-full bg-purple-500 border-4 border-white shadow"></div>
+                        <div class="p-4 bg-white rounded-xl border border-slate-200">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-semibold text-slate-800">Staff Software Engineer</h4>
+                                    <p class="text-purple-600 font-medium">Google</p>
+                                </div>
+                                <span class="text-sm text-slate-500 bg-slate-100 px-3 py-1 rounded-full">2015 - 2020</span>
+                            </div>
+                            <p class="text-sm text-slate-600 mt-2">Built ML platform serving 1B predictions daily.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Startup -->
+                    <div class="relative">
+                        <div class="absolute -left-10 w-6 h-6 rounded-full bg-teal-500 border-4 border-white shadow"></div>
+                        <div class="p-4 bg-white rounded-xl border border-slate-200">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-semibold text-slate-800">Founding Engineer</h4>
+                                    <p class="text-teal-600 font-medium">StartupXYZ</p>
+                                </div>
+                                <span class="text-sm text-slate-500 bg-slate-100 px-3 py-1 rounded-full">2012 - 2015</span>
+                            </div>
+                            <p class="text-sm text-slate-600 mt-2">Built core platform from 0 to 5M users.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Trajectory Stats -->
+            <div class="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-slate-100">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-slate-800">8+</div>
+                    <div class="text-sm text-slate-500">Years Experience</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-slate-800">3</div>
+                    <div class="text-sm text-slate-500">Companies</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-emerald-600">85/100</div>
+                    <div class="text-sm text-slate-500">Stability Score</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommendation Box -->
+        <div class="card p-8 bg-gradient-to-r from-indigo-500 to-teal-500 text-white">
+            <div class="flex flex-col md:flex-row items-center gap-6">
+                <div class="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center">
+                    <span class="text-4xl">✅</span>
+                </div>
+                <div class="flex-grow text-center md:text-left">
+                    <h3 class="text-2xl font-bold mb-2">RECOMMEND FOR INTERVIEW</h3>
+                    <p class="text-white/80">Strong technical skill match with all critical requirements satisfied. Candidate shows consistent career progression and impactful achievements.</p>
+                </div>
+                <div class="text-center">
+                    <div class="text-4xl font-bold">80%</div>
+                    <div class="text-white/80">Confidence</div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-white/20">
+                <div>
+                    <h4 class="font-semibold mb-3">✨ Key Strengths</h4>
+                    <ul class="space-y-2 text-white/90">
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-white"></span>Strong technical skill match (100/100)</li>
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-white"></span>All critical requirements satisfied</li>
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-white"></span>12+ years at top-tier companies</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-3">📋 Interview Focus Areas</h4>
+                    <ul class="space-y-2 text-white/90">
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-white"></span>Deep-dive into Kubernetes architecture decisions</li>
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-white"></span>Leadership and team scaling experience</li>
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-white"></span>Verify $500B payment system claims</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-12">
+        <div class="max-w-6xl mx-auto px-6 py-6">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded bg-gradient-to-br from-indigo-500 to-teal-500 flex items-center justify-center">
+                        <span class="text-white text-xs font-bold">TI</span>
+                    </div>
+                    <span>TrajectIQ v1.0.0</span>
+                    <span class="text-slate-300">|</span>
+                    <span>Deterministic • Explainable • Auditable</span>
+                </div>
+                <div>
+                    Generated: <span id="timestamp"></span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+        
+        // Animate progress bars on load
+        document.addEventListener('DOMContentLoaded', function() {
+            const bars = document.querySelectorAll('.progress-bar');
+            bars.forEach(bar => {
+                const width = bar.style.width;
+                bar.style.width = '0%';
+                setTimeout(() => {
+                    bar.style.width = width;
+                }, 100);
+            });
+        });
+    </script>
+</body>
+</html>
