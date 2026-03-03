@@ -1,141 +1,240 @@
-# 🚀 Welcome to Z.ai Code Scaffold
+# TrajectIQ Enterprise Platform
 
-A modern, production-ready web application scaffold powered by cutting-edge technologies, designed to accelerate your development with [Z.ai](https://chat.z.ai)'s AI-powered coding assistance.
+<p align="center">
+  <img src="public/trajectiq-logo.svg" alt="TrajectIQ Logo" width="200">
+</p>
 
-## ✨ Technology Stack
+<p align="center">
+  <strong>Intelligence-Driven Hiring Platform</strong><br>
+  <em>Deterministic Scoring • Enterprise Security • Full Explainability</em>
+</p>
 
-This scaffold provides a robust foundation built with:
+---
 
-### 🎯 Core Framework
-- **⚡ Next.js 16** - The React framework for production with App Router
-- **📘 TypeScript 5** - Type-safe JavaScript for better developer experience
-- **🎨 Tailwind CSS 4** - Utility-first CSS framework for rapid UI development
+## Overview
 
-### 🧩 UI Components & Styling
-- **🧩 shadcn/ui** - High-quality, accessible components built on Radix UI
-- **🎯 Lucide React** - Beautiful & consistent icon library
-- **🌈 Framer Motion** - Production-ready motion library for React
-- **🎨 Next Themes** - Perfect dark mode in 2 lines of code
+TrajectIQ Enterprise is a comprehensive, production-grade platform for intelligence-driven hiring of software engineers. It features deterministic scoring with full explainability, enterprise-grade security, and optional AI semantic enhancement.
 
-### 📋 Forms & Validation
-- **🎣 React Hook Form** - Performant forms with easy validation
-- **✅ Zod** - TypeScript-first schema validation
+### Key Features
 
-### 🔄 State Management & Data Fetching
-- **🐻 Zustand** - Simple, scalable state management
-- **🔄 TanStack Query** - Powerful data synchronization for React
-- **🌐 Fetch** - Promise-based HTTP request
+- 🎯 **Deterministic Scoring** - Reproducible, explainable hiring decisions
+- 🔐 **Enterprise Security** - RSA-4096 licensing, bcrypt auth, encrypted config
+- 👥 **Multi-User RBAC** - Super Admin, HR Admin, Recruiter, Auditor roles
+- 📊 **Bias Detection** - Fairness monitoring and compliance reporting
+- 📜 **License Management** - Offline activation with machine binding
+- 🔗 **Integrations** - Email (IMAP) and ATS (Greenhouse, Lever, Workable)
 
-### 🗄️ Database & Backend
-- **🗄️ Prisma** - Next-generation TypeScript ORM
-- **🔐 NextAuth.js** - Complete open-source authentication solution
+---
 
-### 🎨 Advanced UI Features
-- **📊 TanStack Table** - Headless UI for building tables and datagrids
-- **🖱️ DND Kit** - Modern drag and drop toolkit for React
-- **📊 Recharts** - Redefined chart library built with React and D3
-- **🖼️ Sharp** - High performance image processing
+## Architecture
 
-### 🌍 Internationalization & Utilities
-- **🌍 Next Intl** - Internationalization library for Next.js
-- **📅 Date-fns** - Modern JavaScript date utility library
-- **🪝 ReactUse** - Collection of essential React hooks for modern development
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     TrajectIQ Enterprise                        │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │              Layer 1: Deterministic Core                │   │
+│  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐    │   │
+│  │  │ Resume Parser│ │Skill Evaluator│ │Impact Scorer │    │   │
+│  │  └──────────────┘ └──────────────┘ └──────────────┘    │   │
+│  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐    │   │
+│  │  │Trajectory    │ │AI Detector   │ │Scoring Engine│    │   │
+│  │  │Analyzer      │ │(Advisory)    │ │(Final Index) │    │   │
+│  │  └──────────────┘ └──────────────┘ └──────────────┘    │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │          Layer 2: AI Enhancement (Optional)             │   │
+│  │  Modes: OFF | LOCAL (Ollama) | API                      │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │              Enterprise Security Layer                   │   │
+│  │  • Fernet encryption • bcrypt • RSA validation          │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-## 🎯 Why This Scaffold?
+---
 
-- **🏎️ Fast Development** - Pre-configured tooling and best practices
-- **🎨 Beautiful UI** - Complete shadcn/ui component library with advanced interactions
-- **🔒 Type Safety** - Full TypeScript configuration with Zod validation
-- **📱 Responsive** - Mobile-first design principles with smooth animations
-- **🗄️ Database Ready** - Prisma ORM configured for rapid backend development
-- **🔐 Auth Included** - NextAuth.js for secure authentication flows
-- **📊 Data Visualization** - Charts, tables, and drag-and-drop functionality
-- **🌍 i18n Ready** - Multi-language support with Next Intl
-- **🚀 Production Ready** - Optimized build and deployment settings
-- **🤖 AI-Friendly** - Structured codebase perfect for AI assistance
+## Scoring System
 
-## 🚀 Quick Start
+### Deterministic Hiring Index
+
+```
+Hiring Index = (SDI × 0.40) + (CSIG × 0.15) + (IAE × 0.20) + (CTA × 0.15) + (ERR × 0.10)
+```
+
+| Component | Weight | Description |
+|-----------|--------|-------------|
+| **SDI** (Skill Depth Index) | 40% | Technical depth 0-5 scale |
+| **CSIG** (Critical Skill Integrity Gate) | 15% | Required skills threshold |
+| **IAE** (Impact Authenticity Engine) | 20% | Achievement quality scoring |
+| **CTA** (Career Trajectory Analyzer) | 15% | Career progression analysis |
+| **ERR** (Experience Relevance Ratio) | 10% | Relevant experience ratio |
+
+### Grade Scale
+
+| Grade | Score | Tier | Recommendation |
+|-------|-------|------|----------------|
+| A+ | 95-100 | 1 | Strong Hire |
+| A | 90-94 | 1 | Strong Hire |
+| B+ | 85-89 | 2 | Hire |
+| B | 75-84 | 2 | Hire |
+| C | 60-74 | 3 | Consider |
+| D/F | <60 | 4-5 | Pass |
+
+---
+
+## Technology Stack
+
+### Backend (Python)
+- Python 3.10+
+- SQLite with full-text search
+- PyQt5 for desktop GUI
+- Fernet encryption
+- RSA-4096 signatures
+
+### Frontend (Next.js 15)
+- TypeScript 5
+- Tailwind CSS 4
+- shadcn/ui components
+- Prisma ORM
+- Recharts for visualization
+
+---
+
+## Project Structure
+
+```
+TrajectIQ/
+├── src/                          # Python Backend
+│   ├── main.py                   # Entry point
+│   ├── core/
+│   │   ├── config.py             # Encrypted configuration
+│   │   └── database.py           # SQLite manager
+│   ├── security/
+│   │   ├── rbac.py               # Role-based access control
+│   │   └── license.py            # License validation
+│   ├── modules/
+│   │   ├── scoring_engine.py     # Deterministic evaluation
+│   │   └── bias_detection.py     # Fairness monitoring
+│   └── connectors/
+│       ├── email_connector.py    # IMAP integration
+│       └── ats_connector.py      # ATS APIs
+├── tools/
+│   ├── license_generator.py      # License creation tool
+│   └── floating_license_server.py
+├── installer/
+│   └── setup.iss                 # Inno Setup script
+├── docs/
+│   ├── DEPLOYMENT.md
+│   └── SECURITY_CHECKLIST.md
+├── src/app/                      # Next.js Frontend
+│   ├── page.tsx                  # Dashboard
+│   └── api/                      # API routes
+├── prisma/
+│   └── schema.prisma             # Database schema
+└── public/                       # Static assets
+```
+
+---
+
+## Quick Start
+
+### Frontend (Next.js Dashboard)
 
 ```bash
 # Install dependencies
 bun install
 
+# Set up database
+bunx prisma generate
+bunx prisma db push
+
 # Start development server
 bun run dev
-
-# Build for production
-bun run build
-
-# Start production server
-bun start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see your application running.
+Open [http://localhost:3000](http://localhost:3000) to view the dashboard.
 
-## 🤖 Powered by Z.ai
+### Backend (Python Desktop App)
 
-This scaffold is optimized for use with [Z.ai](https://chat.z.ai) - your AI assistant for:
+```bash
+# Install dependencies
+pip install -r TrajectIQ/requirements.txt
 
-- **💻 Code Generation** - Generate components, pages, and features instantly
-- **🎨 UI Development** - Create beautiful interfaces with AI assistance  
-- **🔧 Bug Fixing** - Identify and resolve issues with intelligent suggestions
-- **📝 Documentation** - Auto-generate comprehensive documentation
-- **🚀 Optimization** - Performance improvements and best practices
+# Run CLI evaluation
+python -m TrajectIQ.src.main --evaluate resume.txt
 
-Ready to build something amazing? Start chatting with Z.ai at [chat.z.ai](https://chat.z.ai) and experience the future of AI-powered development!
+# Run GUI application
+python -m TrajectIQ.src.main --gui
 
-## 📁 Project Structure
-
-```
-src/
-├── app/                 # Next.js App Router pages
-├── components/          # Reusable React components
-│   └── ui/             # shadcn/ui components
-├── hooks/              # Custom React hooks
-└── lib/                # Utility functions and configurations
+# Generate license keys
+python TrajectIQ/tools/license_generator.py --interactive
 ```
 
-## 🎨 Available Features & Components
+### Building Windows Executable
 
-This scaffold includes a comprehensive set of modern web development tools:
+```bash
+# Install PyInstaller
+pip install pyinstaller
 
-### 🧩 UI Components (shadcn/ui)
-- **Layout**: Card, Separator, Aspect Ratio, Resizable Panels
-- **Forms**: Input, Textarea, Select, Checkbox, Radio Group, Switch
-- **Feedback**: Alert, Toast (Sonner), Progress, Skeleton
-- **Navigation**: Breadcrumb, Menubar, Navigation Menu, Pagination
-- **Overlay**: Dialog, Sheet, Popover, Tooltip, Hover Card
-- **Data Display**: Badge, Avatar, Calendar
+# Build executable
+python TrajectIQ/build.py --clean
 
-### 📊 Advanced Data Features
-- **Tables**: Powerful data tables with sorting, filtering, pagination (TanStack Table)
-- **Charts**: Beautiful visualizations with Recharts
-- **Forms**: Type-safe forms with React Hook Form + Zod validation
-
-### 🎨 Interactive Features
-- **Animations**: Smooth micro-interactions with Framer Motion
-- **Drag & Drop**: Modern drag-and-drop functionality with DND Kit
-- **Theme Switching**: Built-in dark/light mode support
-
-### 🔐 Backend Integration
-- **Authentication**: Ready-to-use auth flows with NextAuth.js
-- **Database**: Type-safe database operations with Prisma
-- **API Client**: HTTP requests with Fetch + TanStack Query
-- **State Management**: Simple and scalable with Zustand
-
-### 🌍 Production Features
-- **Internationalization**: Multi-language support with Next Intl
-- **Image Optimization**: Automatic image processing with Sharp
-- **Type Safety**: End-to-end TypeScript with Zod validation
-- **Essential Hooks**: 100+ useful React hooks with ReactUse for common patterns
-
-## 🤝 Get Started with Z.ai
-
-1. **Clone this scaffold** to jumpstart your project
-2. **Visit [chat.z.ai](https://chat.z.ai)** to access your AI coding assistant
-3. **Start building** with intelligent code generation and assistance
-4. **Deploy with confidence** using the production-ready setup
+# Output: dist/TrajectIQ.exe
+```
 
 ---
 
-Built with ❤️ for the developer community. Supercharged by [Z.ai](https://chat.z.ai) 🚀
+## RBAC Roles
+
+| Role | Permissions |
+|------|-------------|
+| **Super Admin** | Full control, license management, scoring weights |
+| **HR Admin** | ATS/email config, all candidates, reports |
+| **Recruiter** | Upload resumes, view assigned candidates |
+| **Auditor** | Read-only, audit logs, bias monitoring |
+
+---
+
+## License System
+
+- RSA-4096 signature validation
+- Machine fingerprint binding (CPU + Disk + MAC)
+- Feature gating (AI, ATS, Analytics, Bias)
+- Offline activation by default
+- Optional floating license server
+- Optional cloud validation
+
+---
+
+## Bias Prevention
+
+1. **No Protected Attributes** - Never uses race, gender, age
+2. **Proxy Monitoring** - Detects potential proxy indicators
+3. **Score Distribution** - Monitors for anomalous patterns
+4. **Recruiter Deviation** - Flags significant scoring variations
+5. **AI Signal Advisory** - AI detection never causes rejection
+
+---
+
+## Documentation
+
+- [Deployment Guide](TrajectIQ/docs/DEPLOYMENT.md)
+- [Security Checklist](TrajectIQ/docs/SECURITY_CHECKLIST.md)
+- [Testing Instructions](TrajectIQ/docs/TESTING.md)
+
+---
+
+## Support
+
+- Technical Support: support@trajectiq.com
+- License Issues: license-support@trajectiq.com
+
+---
+
+## License
+
+Copyright © 2024 TrajectIQ. All rights reserved.
+
+Licensed under the terms of your license agreement. This software requires a valid license key for operation.
