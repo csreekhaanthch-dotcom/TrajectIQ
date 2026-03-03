@@ -1,0 +1,82 @@
+JOHN MITCHELL
+Senior Software Engineer
+San Francisco, CA | john.mitchell@email.com | (555) 123-4567
+LinkedIn: linkedin.com/in/johnmitchell | GitHub: github.com/johnmitchell
+
+SUMMARY
+Results-driven Senior Software Engineer with 7+ years of experience building scalable distributed systems and cloud-native applications. Expert in Python, Kubernetes, and AWS with a proven track record of delivering high-impact projects. Passionate about technical excellence and mentoring junior engineers.
+
+EXPERIENCE
+
+TechCorp Inc. | Senior Software Engineer | San Francisco, CA
+March 2020 - Present
+
+• Led the migration of monolithic application to microservices architecture, improving deployment frequency by 10x and reducing deployment time from 2 hours to 15 minutes
+• Reduced API latency by 45% through database query optimization and implementation of Redis caching layer
+• Designed and implemented real-time notification system handling 5M+ daily events with 99.9% uptime
+• Mentored team of 4 junior engineers, conducting code reviews and technical workshops
+• Technologies: Python, Kubernetes, PostgreSQL, Redis, AWS, Docker
+
+TechCorp Inc. | Software Engineer | San Francisco, CA
+April 2018 - February 2020
+
+• Built core platform services serving 2M+ users with sub-100ms response times
+• Implemented CI/CD pipeline reducing deployment time by 60%
+• Developed monitoring and alerting system using Prometheus and Grafana
+• Technologies: Python, Django, PostgreSQL, Celery, AWS
+
+StartupXYZ | Junior Software Engineer | San Francisco, CA
+June 2016 - March 2018
+
+• Developed full-stack features for fintech application processing $10M+ monthly transactions
+• Built automated testing framework increasing test coverage from 40% to 85%
+• Implemented payment integration with Stripe and Plaid APIs
+• Technologies: Python, JavaScript, React, PostgreSQL, AWS
+
+EDUCATION
+
+University of California, Berkeley
+Master of Science in Computer Science | September 2014 - May 2016
+• GPA: 3.8/4.0
+• Focus: Distributed Systems and Machine Learning
+• Thesis: "Scalable Machine Learning Pipeline for Real-time Data Processing"
+
+University of California, Los Angeles
+Bachelor of Science in Computer Science | September 2010 - May 2014
+• GPA: 3.6/4.0
+• Dean's List: Fall 2012, Spring 2013, Fall 2013
+
+SKILLS
+
+Technical Skills:
+• Programming: Python (Expert, 7 years), JavaScript (Advanced, 4 years), Go (Intermediate, 1 year)
+• Cloud & Infrastructure: AWS (Advanced, 5 years), Kubernetes (Advanced, 4 years), Docker (Advanced, 5 years), Terraform (Intermediate, 2 years)
+• Databases: PostgreSQL (Advanced, 6 years), Redis (Advanced, 4 years), MongoDB (Intermediate, 2 years)
+• Tools: Git, CI/CD, Prometheus, Grafana, ELK Stack
+
+Soft Skills:
+• Leadership & Mentoring
+• Technical Communication
+• Problem Solving
+• Agile Methodologies
+
+CERTIFICATIONS
+
+• AWS Solutions Architect Professional - Amazon Web Services (2022)
+• Certified Kubernetes Administrator (CKA) - CNCF (2021)
+• AWS Certified Developer Associate - Amazon Web Services (2020)
+
+PROJECTS
+
+Open Source Contributons:
+• Contributed to Kubernetes project (3 merged PRs)
+• Maintainer of Python library with 500+ GitHub stars
+
+Personal Projects:
+• Built real-time analytics dashboard processing 100K events/second
+• Developed AI-powered code review tool using GPT-4 API
+
+LANGUAGES
+
+• English (Native)
+• Spanish (Conversational)

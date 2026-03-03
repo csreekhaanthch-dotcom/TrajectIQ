@@ -1,0 +1,75 @@
+{
+  "job_id": "JOB-ENG-2024-001",
+  "job_title": "Senior Software Engineer",
+  "department": "Engineering",
+  "description": "We are seeking a Senior Software Engineer to join our Platform team. The ideal candidate will have strong experience in building scalable distributed systems and a passion for technical excellence.",
+  "required_skills": [
+    {
+      "name": "Python",
+      "category": "Programming",
+      "minimum_years": 5,
+      "minimum_proficiency": "advanced",
+      "weight": 1.0,
+      "is_critical": true
+    },
+    {
+      "name": "Kubernetes",
+      "category": "Infrastructure",
+      "minimum_years": 2,
+      "minimum_proficiency": "intermediate",
+      "weight": 0.8,
+      "is_critical": true
+    },
+    {
+      "name": "PostgreSQL",
+      "category": "Database",
+      "minimum_years": 3,
+      "minimum_proficiency": "intermediate",
+      "weight": 0.6,
+      "is_critical": false
+    },
+    {
+      "name": "Docker",
+      "category": "Infrastructure",
+      "minimum_years": 2,
+      "minimum_proficiency": "intermediate",
+      "weight": 0.5,
+      "is_critical": false
+    },
+    {
+      "name": "AWS",
+      "category": "Cloud",
+      "minimum_years": 2,
+      "minimum_proficiency": "intermediate",
+      "weight": 0.5,
+      "is_critical": false
+    }
+  ],
+  "preferred_skills": [
+    {
+      "name": "Redis",
+      "category": "Database",
+      "minimum_years": 1,
+      "weight": 0.2
+    },
+    {
+      "name": "Terraform",
+      "category": "Infrastructure",
+      "minimum_years": 1,
+      "weight": 0.2
+    },
+    {
+      "name": "Go",
+      "category": "Programming",
+      "minimum_years": 1,
+      "weight": 0.3
+    }
+  ],
+  "skill_synonyms": {
+    "Python": ["python3", "py", "python programming"],
+    "Kubernetes": ["k8s", "kubernetes orchestration"],
+    "AWS": ["amazon web services", "amazon-web-services"],
+    "PostgreSQL": ["postgres", "psql", "postgresql database"],
+    "Docker": ["docker containers", "containerization", "containers"]
+  }
+}

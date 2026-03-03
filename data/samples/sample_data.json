@@ -1,0 +1,218 @@
+{
+  "sample_job_requirements": {
+    "job_id": "JOB-ENG-2024-042",
+    "job_title": "Senior Software Engineer",
+    "department": "Engineering",
+    "description": "We are looking for a Senior Software Engineer to join our platform team.",
+    "required_skills": [
+      {
+        "name": "Python",
+        "category": "Programming",
+        "minimum_years": 5,
+        "minimum_proficiency": "advanced",
+        "weight": 1.0,
+        "is_critical": true
+      },
+      {
+        "name": "Kubernetes",
+        "category": "Infrastructure",
+        "minimum_years": 2,
+        "minimum_proficiency": "intermediate",
+        "weight": 0.8,
+        "is_critical": true
+      },
+      {
+        "name": "PostgreSQL",
+        "category": "Database",
+        "minimum_years": 3,
+        "minimum_proficiency": "intermediate",
+        "weight": 0.6,
+        "is_critical": false
+      },
+      {
+        "name": "Docker",
+        "category": "Infrastructure",
+        "minimum_years": 2,
+        "minimum_proficiency": "intermediate",
+        "weight": 0.5,
+        "is_critical": false
+      },
+      {
+        "name": "AWS",
+        "category": "Cloud",
+        "minimum_years": 2,
+        "minimum_proficiency": "intermediate",
+        "weight": 0.5,
+        "is_critical": false
+      }
+    ],
+    "preferred_skills": [
+      {"name": "Redis", "category": "Database", "minimum_years": 1, "weight": 0.2},
+      {"name": "Terraform", "category": "Infrastructure", "minimum_years": 1, "weight": 0.2}
+    ],
+    "skill_synonyms": {
+      "Python": ["python3", "py", "python programming"],
+      "Kubernetes": ["k8s", "kubernetes orchestration"],
+      "AWS": ["amazon web services", "amazon-web-services"],
+      "PostgreSQL": ["postgres", "psql"]
+    }
+  },
+  
+  "sample_candidate_profile": {
+    "candidate_id": "CAND-2024-001",
+    "full_name": "Sarah Chen",
+    "email": "sarah.chen@email.com",
+    "phone": "+1-555-123-4567",
+    "location": {
+      "city": "San Francisco",
+      "state": "CA",
+      "country": "USA"
+    },
+    "linkedin_url": "https://linkedin.com/in/sarahchen",
+    "github_url": "https://github.com/sarahchen",
+    "summary": "Senior Software Engineer with 8+ years of experience building scalable distributed systems. Expert in Python, Kubernetes, and cloud-native architectures. Proven track record of leading high-impact projects.",
+    "education": [
+      {
+        "institution": "Stanford University",
+        "degree": "Master of Science",
+        "field_of_study": "Computer Science",
+        "start_date": "2012-09",
+        "end_date": "2014-06",
+        "gpa": 3.9
+      },
+      {
+        "institution": "UC Berkeley",
+        "degree": "Bachelor of Science",
+        "field_of_study": "Computer Science",
+        "start_date": "2008-09",
+        "end_date": "2012-05",
+        "gpa": 3.7
+      }
+    ],
+    "experience": [
+      {
+        "company": "TechCorp Inc.",
+        "title": "Senior Software Engineer",
+        "location": "San Francisco, CA",
+        "start_date": "2020-03",
+        "end_date": null,
+        "is_current": true,
+        "employment_type": "full-time",
+        "description": "Lead engineer for microservices architecture serving 10M+ users",
+        "achievements": [
+          {
+            "text": "Reduced API latency by 40% through optimization of database queries and caching implementation",
+            "metrics": [
+              {"value": "40%", "unit": "reduction", "context": "API latency"}
+            ]
+          },
+          {
+            "text": "Led migration of monolith to microservices architecture, improving deployment frequency by 10x",
+            "metrics": [
+              {"value": "10x", "unit": "improvement", "context": "deployment frequency"}
+            ]
+          }
+        ],
+        "technologies_used": ["Python", "Kubernetes", "PostgreSQL", "Redis", "AWS"]
+      },
+      {
+        "company": "TechCorp Inc.",
+        "title": "Software Engineer",
+        "location": "San Francisco, CA",
+        "start_date": "2018-04",
+        "end_date": "2020-02",
+        "is_current": false,
+        "employment_type": "full-time",
+        "description": "Backend development for core platform services",
+        "achievements": [
+          {
+            "text": "Built real-time notification system handling 1M+ daily events",
+            "metrics": [
+              {"value": "1M+", "unit": "daily", "context": "events processed"}
+            ]
+          }
+        ],
+        "technologies_used": ["Python", "Django", "PostgreSQL", "Redis"]
+      },
+      {
+        "company": "StartupXYZ",
+        "title": "Junior Software Engineer",
+        "location": "San Francisco, CA",
+        "start_date": "2016-06",
+        "end_date": "2018-03",
+        "is_current": false,
+        "employment_type": "full-time",
+        "description": "Full-stack development for fintech application",
+        "achievements": [],
+        "technologies_used": ["Python", "JavaScript", "PostgreSQL", "AWS"]
+      }
+    ],
+    "skills": {
+      "technical": [
+        {"name": "Python", "category": "Programming", "years_experience": 8, "proficiency": "expert"},
+        {"name": "Kubernetes", "category": "Infrastructure", "years_experience": 4, "proficiency": "advanced"},
+        {"name": "PostgreSQL", "category": "Database", "years_experience": 6, "proficiency": "advanced"},
+        {"name": "AWS", "category": "Cloud", "years_experience": 5, "proficiency": "advanced"},
+        {"name": "Docker", "category": "Infrastructure", "years_experience": 5, "proficiency": "advanced"},
+        {"name": "Redis", "category": "Database", "years_experience": 4, "proficiency": "intermediate"}
+      ],
+      "soft_skills": ["Leadership", "Communication", "Problem Solving", "Mentoring"],
+      "languages": [
+        {"language": "English", "proficiency": "Native"},
+        {"language": "Mandarin", "proficiency": "Fluent"}
+      ]
+    },
+    "certifications": [
+      {
+        "name": "AWS Solutions Architect Professional",
+        "issuer": "Amazon Web Services",
+        "issue_date": "2022-03"
+      },
+      {
+        "name": "Certified Kubernetes Administrator (CKA)",
+        "issuer": "CNCF",
+        "issue_date": "2021-06"
+      }
+    ]
+  },
+  
+  "expected_evaluation_output": {
+    "skill_evaluation": {
+      "overall_score": {
+        "normalized_score": 86
+      },
+      "critical_skills_status": {
+        "all_critical_met": true
+      }
+    },
+    "impact_evaluation": {
+      "overall_impact_score": {
+        "normalized_score": 78,
+        "confidence": 0.72
+      }
+    },
+    "trajectory_analysis": {
+      "trajectory_score": {
+        "overall_score": 82,
+        "trajectory_type": "steady_upward"
+      }
+    },
+    "ai_detection": {
+      "overall_assessment": {
+        "ai_likelihood_score": 28,
+        "risk_level": "low"
+      }
+    },
+    "final_scoring": {
+      "final_score": {
+        "normalized_score": 82,
+        "grade": "A-",
+        "tier": "tier_2_strong_candidate"
+      },
+      "recommendation": {
+        "decision": "recommend",
+        "confidence": 0.82
+      }
+    }
+  }
+}

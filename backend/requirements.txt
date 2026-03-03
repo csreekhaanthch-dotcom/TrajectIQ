@@ -1,0 +1,48 @@
+# TrajectIQ Backend Dependencies
+# ===============================
+
+# Core
+python>=3.9
+typing-extensions>=4.0.0
+
+# Data Processing
+PyPDF2>=3.0.0
+pdfplumber>=0.10.0
+python-docx>=0.8.11
+python-dateutil>=2.8.2
+
+# Database
+sqlite3  # Included in Python standard library
+# psycopg2-binary>=2.9.0  # Uncomment for PostgreSQL
+# mysql-connector-python>=8.0.0  # Uncomment for MySQL
+
+# HTTP & API
+requests>=2.28.0
+# fastapi>=0.100.0  # Uncomment for API server
+# uvicorn>=0.22.0  # Uncomment for API server
+
+# Email Connectors (Optional)
+# google-auth>=2.20.0
+# google-auth-oauthlib>=1.0.0
+# google-auth-httplib2>=0.1.0
+# google-api-python-client>=2.90.0
+
+# LLM Integration
+# ollama>=0.1.0  # If using ollama Python client
+
+# Utilities
+python-magic>=0.4.27  # File type detection
+chardet>=5.0.0  # Character encoding detection
+
+# Logging & Monitoring
+# structlog>=23.0.0  # Structured logging
+
+# Testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0.0
+
+# Development
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.0.0
