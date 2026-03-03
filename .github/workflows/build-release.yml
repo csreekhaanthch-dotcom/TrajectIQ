@@ -61,9 +61,54 @@ jobs:
           print('RSA keys generated successfully')
           "
 
-      - name: Build executable with PyInstaller
+      - name: Build executable with PyInstaller (Standalone)
         run: |
-          pyinstaller --onefile --name "TrajectIQ" --clean --noconfirm --hidden-import=cryptography --hidden-import=cryptography.fernet --hidden-import=cryptography.hazmat.primitives --hidden-import=cryptography.hazmat.primitives.asymmetric --hidden-import=cryptography.hazmat.backends --hidden-import=bcrypt --hidden-import=PyQt5 --hidden-import=PyQt5.QtCore --hidden-import=PyQt5.QtGui --hidden-import=PyQt5.QtWidgets --hidden-import=PyQt5.sip --hidden-import=security --hidden-import=security.license --hidden-import=security.rbac --hidden-import=security.integrity --hidden-import=modules --hidden-import=modules.scoring_engine --hidden-import=modules.bias_detection --hidden-import=modules.experience_relevance --hidden-import=core --hidden-import=core.database --hidden-import=core.config --hidden-import=ui --hidden-import=ui.main_window --hidden-import=connectors --hidden-import=connectors.ats_connector --hidden-import=connectors.email_connector --hidden-import=ai_enhancement --hidden-import=ai_enhancement.semantic_layer --add-data "tools/keys/public_key.pem;tools/keys" src/main.py
+          pyinstaller --onefile --windowed --name "TrajectIQ" --clean --noconfirm `
+            --hidden-import=cryptography `
+            --hidden-import=cryptography.fernet `
+            --hidden-import=cryptography.hazmat.primitives `
+            --hidden-import=cryptography.hazmat.primitives.asymmetric `
+            --hidden-import=cryptography.hazmat.primitives.asymmetric.rsa `
+            --hidden-import=cryptography.hazmat.primitives.asymmetric.padding `
+            --hidden-import=cryptography.hazmat.primitives.hashes `
+            --hidden-import=cryptography.hazmat.backends `
+            --hidden-import=cryptography.hazmat.backends.defaultbackend `
+            --hidden-import=bcrypt `
+            --hidden-import=_bcrypt `
+            --hidden-import=PyQt5 `
+            --hidden-import=PyQt5.QtCore `
+            --hidden-import=PyQt5.QtGui `
+            --hidden-import=PyQt5.QtWidgets `
+            --hidden-import=PyQt5.sip `
+            --hidden-import=security `
+            --hidden-import=security.license `
+            --hidden-import=security.rbac `
+            --hidden-import=security.integrity `
+            --hidden-import=modules `
+            --hidden-import=modules.scoring_engine `
+            --hidden-import=modules.bias_detection `
+            --hidden-import=modules.experience_relevance `
+            --hidden-import=core `
+            --hidden-import=core.database `
+            --hidden-import=core.config `
+            --hidden-import=ui `
+            --hidden-import=ui.main_window `
+            --hidden-import=connectors `
+            --hidden-import=connectors.ats_connector `
+            --hidden-import=connectors.email_connector `
+            --hidden-import=ai_enhancement `
+            --hidden-import=ai_enhancement.semantic_layer `
+            --hidden-import=PyPDF2 `
+            --hidden-import=docx `
+            --hidden-import=requests `
+            --hidden-import=urllib3 `
+            --collect-all PyQt5 `
+            --collect-binaries PyQt5 `
+            --collect-data PyQt5 `
+            --collect-data cryptography `
+            --add-data "tools/keys/public_key.pem;tools/keys" `
+            src/main.py
+        shell: powershell
 
       - name: Verify build
         run: |
@@ -97,7 +142,7 @@ jobs:
           Copy-Item "README.md" $distDir -ErrorAction SilentlyContinue
           Copy-Item "LICENSE" $distDir -ErrorAction SilentlyContinue
           if (Test-Path "docs") { Copy-Item "docs" -Destination "$distDir/docs" -Recurse }
-          $quickStart = "TrajectIQ Enterprise v$version`n================================`n`nQuick Start:`n1. Run TrajectIQ.exe to launch the application`n2. On first run, you will see the license activation screen`n3. Click 'Show Fingerprint' to get your machine ID`n4. Contact support@trajectiq.com for license activation`n`nSupport: support@trajectiq.com"
+          $quickStart = "TrajectIQ Enterprise v$version`n================================`n`nQuick Start:`n1. Run TrajectIQ.exe to launch the application`n2. On first run, you will see the license activation screen`n3. Click 'Show Fingerprint' to get your machine ID`n4. Contact support@trajectiq.com for license activation`n`nSystem Requirements:`n- Windows 10/11 (64-bit)`n- No additional dependencies required`n`nSupport: support@trajectiq.com"
           $quickStart | Out-File -FilePath "$distDir/QUICKSTART.txt" -Encoding UTF8
           Compress-Archive -Path $distDir -DestinationPath "dist/TrajectIQ-$version-win-x64.zip"
           Write-Host "Package created: TrajectIQ-$version-win-x64.zip"
@@ -128,12 +173,12 @@ jobs:
             - Optional AI enhancement layer
 
             **What's Included:**
-            - `TrajectIQ.exe` - Standalone Windows executable
+            - `TrajectIQ.exe` - Standalone Windows executable (all dependencies included)
             - Documentation and quick start guide
 
             **System Requirements:**
             - Windows 10/11 (64-bit)
-            - No additional dependencies required
+            - No additional dependencies required - everything is bundled!
 
             ### Installation
             1. Download and extract the ZIP file
@@ -148,91 +193,5 @@ jobs:
             dist/TrajectIQ.exe
           draft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  build-linux:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libxcb-xinerama0 libxcb-cursor0 libgl1-mesa-glx libegl1 libdbus-1-3
-
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller
-
-      - name: Generate RSA keys
-        run: |
-          python -c "
-          from pathlib import Path
-          Path('tools/keys').mkdir(parents=True, exist_ok=True)
-          from cryptography.hazmat.primitives.asymmetric import rsa
-          from cryptography.hazmat.primitives import serialization
-          from cryptography.hazmat.backends import default_backend
-          private_key = rsa.generate_private_key(public_exponent=65537, key_size=4096, backend=default_backend())
-          public_key = private_key.public_key()
-          private_pem = private_key.private_bytes(encoding=serialization.Encoding.PEM, format=serialization.PrivateFormat.PKCS8, encryption_algorithm=serialization.NoEncryption())
-          Path('tools/keys/private_key.pem').write_bytes(private_pem)
-          public_pem = public_key.public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.SubjectPublicKeyInfo)
-          Path('tools/keys/public_key.pem').write_bytes(public_pem)
-          print('RSA keys generated successfully')
-          "
-
-      - name: Build executable
-        run: |
-          pyinstaller --onefile --name "TrajectIQ" --clean --noconfirm --hidden-import=cryptography --hidden-import=cryptography.fernet --hidden-import=cryptography.hazmat.primitives --hidden-import=cryptography.hazmat.primitives.asymmetric --hidden-import=cryptography.hazmat.backends --hidden-import=bcrypt --hidden-import=PyQt5 --hidden-import=PyQt5.QtCore --hidden-import=PyQt5.QtGui --hidden-import=PyQt5.QtWidgets --hidden-import=PyQt5.sip --hidden-import=security --hidden-import=security.license --hidden-import=security.rbac --hidden-import=security.integrity --hidden-import=modules --hidden-import=modules.scoring_engine --hidden-import=modules.bias_detection --hidden-import=modules.experience_relevance --hidden-import=core --hidden-import=core.database --hidden-import=core.config --hidden-import=ui --hidden-import=ui.main_window --hidden-import=connectors --hidden-import=connectors.ats_connector --hidden-import=connectors.email_connector --hidden-import=ai_enhancement --hidden-import=ai_enhancement.semantic_layer --add-data "tools/keys/public_key.pem:tools/keys" src/main.py
-
-      - name: Get version
-        id: version
-        run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-          elif [ "${{ github.ref_type }}" = "tag" ]; then
-            VERSION="${{ github.ref_name }}"
-            VERSION=${VERSION#v}
-          else
-            VERSION="1.0.0"
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Create distribution package
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          DIST_DIR="dist/TrajectIQ-$VERSION-linux"
-          mkdir -p "$DIST_DIR"
-          cp dist/TrajectIQ "$DIST_DIR/" 2>/dev/null || true
-          cp README.md "$DIST_DIR/" 2>/dev/null || true
-          cp LICENSE "$DIST_DIR/" 2>/dev/null || true
-          cp -r docs "$DIST_DIR/" 2>/dev/null || true
-          tar -czvf dist/TrajectIQ-$VERSION-linux-x64.tar.gz -C dist TrajectIQ-$VERSION-linux
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: TrajectIQ-${{ steps.version.outputs.version }}-linux-x64
-          path: dist/TrajectIQ-${{ steps.version.outputs.version }}-linux-x64.tar.gz
-          retention-days: 30
-
-      - name: Upload to Release
-        if: ${{ github.event.inputs.create_release == 'true' || startsWith(github.ref, 'refs/tags/') }}
-        uses: softprops/action-gh-release@v1
-        with:
-          files: dist/TrajectIQ-${{ steps.version.outputs.version }}-linux-x64.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
