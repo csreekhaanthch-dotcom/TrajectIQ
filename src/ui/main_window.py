@@ -258,7 +258,9 @@ class EvaluationWorker(QThread):
             )
             self.finished.emit(result)
         except Exception as e:
-            self.error.emit(str(e))
+            import traceback
+            error_detail = f"{str(e)}\n\nDetails: {traceback.format_exc()}"
+            self.error.emit(error_detail)
 
 
 class MainWindow(QMainWindow):
@@ -448,21 +450,31 @@ class MainWindow(QMainWindow):
         self.run_btn.setEnabled(True)
         self.progress_bar.setVisible(False)
         
-        final = result.get("final_scoring", {}).get("hiring_index", {})
-        
-        output = f"""
+        try:
+            final = result.get("final_scoring", {}).get("hiring_index", {})
+            
+            # Safely extract values with defaults
+            overall_score = final.get('overall_score', 0) if final else 0
+            grade = final.get('grade', 'N/A') if final else 'N/A'
+            tier = result.get("final_scoring", {}).get("tier", "N/A")
+            recommendation = final.get('recommendation', 'N/A') if final else 'N/A'
+            
+            output = f"""
 ╔══════════════════════════════════════════════════════════════╗
 ║                 EVALUATION COMPLETE                          ║
 ╠══════════════════════════════════════════════════════════════╣
-║  HIRING INDEX: {final.get('overall_score', 0):>3}/100
-║  GRADE: {final.get('grade', 'N/A')}
-║  TIER: {final.get('tier', 'N/A')}
-║  RECOMMENDATION: {final.get('recommendation', 'N/A')}
+║  HIRING INDEX: {overall_score:>3}/100
+║  GRADE: {grade}
+║  TIER: {tier}
+║  RECOMMENDATION: {recommendation}
 ╚══════════════════════════════════════════════════════════════╝
 """
-        
-        self.results_output.setText(output)
-        self.status_bar.showMessage("Evaluation complete")
+            
+            self.results_output.setText(output)
+            self.status_bar.showMessage("Evaluation complete")
+        except Exception as e:
+            self.results_output.setText(f"Error displaying results: {str(e)}")
+            self.status_bar.showMessage("Evaluation completed with display error")
     
     def _on_evaluation_error(self, error: str):
         self.run_btn.setEnabled(True)
