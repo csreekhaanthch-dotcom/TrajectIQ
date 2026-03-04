@@ -312,11 +312,27 @@ class MainWindow(QMainWindow):
         left_layout.addWidget(resume_group)
         
         # Job requirements
-        req_group = QGroupBox("Job Requirements (JSON)")
+        req_group = QGroupBox("Job Requirements")
         req_layout = QVBoxLayout(req_group)
         
+        # Add format selector
+        format_layout = QHBoxLayout()
+        format_layout.addWidget(QLabel("Format:"))
+        self.req_format = QComboBox()
+        self.req_format.addItems(["Auto-detect", "Plain Text", "JSON"])
+        self.req_format.currentIndexChanged.connect(self._on_format_changed)
+        format_layout.addWidget(self.req_format)
+        format_layout.addStretch()
+        req_layout.addLayout(format_layout)
+        
         self.requirements_input = QTextEdit()
-        self.requirements_input.setPlaceholderText('[\n  {\n    "name": "Python",\n    "classification": "mission_critical",\n    "minimum_years": 5,\n    "is_critical": true\n  }\n]')
+        self.requirements_input.setPlaceholderText(
+            "Paste your job requirements or job description here.\n\n"
+            "Examples:\n"
+            "• Plain text: \"Looking for Python developer with 5+ years experience, AWS, React...\"\n"
+            "• JSON: [{\"name\": \"Python\", \"classification\": \"mission_critical\", \"minimum_years\": 5}]\n\n"
+            "The app will automatically extract skills from plain text."
+        )
         self.requirements_input.setMaximumHeight(150)
         req_layout.addWidget(self.requirements_input)
         
@@ -421,7 +437,154 @@ class MainWindow(QMainWindow):
         help_menu.addAction(about_action)
     
     def _update_status(self):
-        self.status_bar.showMessage("Ready - TrajectIQ Enterprise v1.0.3")
+        self.status_bar.showMessage("Ready - TrajectIQ Enterprise v1.0.8")
+    
+    def _on_format_changed(self, index):
+        """Update placeholder text based on format selection"""
+        format_type = self.req_format.currentText()
+        if format_type == "Plain Text":
+            self.requirements_input.setPlaceholderText(
+                "Paste the job description here.\n\n"
+                "Example:\n"
+                "\"We are looking for a Senior Python Developer with 5+ years of experience. "
+                "Required skills: Python, Django, AWS, PostgreSQL, Docker. "
+                "Experience with React is a plus.\""
+            )
+        elif format_type == "JSON":
+            self.requirements_input.setPlaceholderText(
+                '[\n  {\n    "name": "Python",\n    "classification": "mission_critical",\n    "minimum_years": 5,\n    "is_critical": true\n  },\n  {\n    "name": "AWS",\n    "classification": "core",\n    "minimum_years": 3\n  }\n]'
+            )
+        else:  # Auto-detect
+            self.requirements_input.setPlaceholderText(
+                "Paste your job requirements or job description here.\n\n"
+                "Examples:\n"
+                "• Plain text: \"Looking for Python developer with 5+ years experience, AWS, React...\"\n"
+                "• JSON: [{\"name\": \"Python\", \"classification\": \"mission_critical\", \"minimum_years\": 5}]\n\n"
+                "The app will automatically extract skills from plain text."
+            )
+    
+    def _parse_requirements(self, text: str) -> list:
+        """Parse job requirements from text or JSON"""
+        text = text.strip()
+        if not text:
+            return []
+        
+        format_type = self.req_format.currentText()
+        
+        # Try JSON first if format is JSON or Auto-detect
+        if format_type in ["JSON", "Auto-detect"]:
+            if text.startswith('[') or text.startswith('{'):
+                try:
+                    import json
+                    reqs = json.loads(text)
+                    if isinstance(reqs, dict):
+                        reqs = [reqs]
+                    return reqs
+                except:
+                    pass
+        
+        # Parse as plain text
+        if format_type in ["Plain Text", "Auto-detect"]:
+            return self._extract_skills_from_text(text)
+        
+        return []
+    
+    def _extract_skills_from_text(self, text: str) -> list:
+        """Extract skills from plain text job description"""
+        
+        # Common technical skills to look for
+        tech_skills = [
+            # Programming languages
+            "python", "java", "javascript", "typescript", "c++", "c#", "go", "golang", "rust",
+            "ruby", "php", "swift", "kotlin", "scala", "r", "matlab", "perl", "lua",
+            # Frontend
+            "react", "angular", "vue", "vue.js", "html", "css", "sass", "less", "tailwind",
+            "next.js", "nextjs", "svelte", "jquery",
+            # Backend
+            "node.js", "nodejs", "django", "flask", "fastapi", "spring", "spring boot",
+            "express", "express.js", "rails", "ruby on rails", "graphql", "rest", "rest api",
+            # Database
+            "sql", "mysql", "postgresql", "postgres", "mongodb", "mongo", "redis",
+            "elasticsearch", "dynamodb", "cassandra", "oracle", "sqlite", "mariadb",
+            # Cloud
+            "aws", "amazon web services", "azure", "gcp", "google cloud", "heroku",
+            "digitalocean", "cloudflare", "firebase",
+            # DevOps
+            "docker", "kubernetes", "k8s", "jenkins", "git", "ci/cd", "cicd", "terraform",
+            "ansible", "puppet", "chef", "prometheus", "grafana", "nginx", "apache",
+            # Data Science/ML
+            "machine learning", "ml", "deep learning", "tensorflow", "pytorch", "keras",
+            "pandas", "numpy", "scikit-learn", "sklearn", "spark", "hadoop", "kafka",
+            "data science", "nlp", "computer vision",
+            # Mobile
+            "android", "ios", "react native", "flutter", "xamarin", "mobile development",
+            # Other common
+            "api", "microservices", "agile", "scrum", "linux", "unix", "bash", "shell",
+            "security", "testing", "unit testing", "tdd", "devops", "sre"
+        ]
+        
+        text_lower = text.lower()
+        requirements = []
+        found_skills = set()
+        
+        # Extract years of experience patterns
+        import re
+        years_patterns = [
+            (r'(\d+)\+?\s*years?\s*(?:of\s+)?experience', 'general'),
+            (r'(\d+)\+?\s*years?\s*(?:in\s+)?(?:programming|coding|development)', 'general'),
+        ]
+        
+        min_years = 0
+        for pattern, _ in years_patterns:
+            match = re.search(pattern, text_lower)
+            if match:
+                min_years = max(min_years, int(match.group(1)))
+        
+        # Find skills mentioned in text
+        for skill in tech_skills:
+            if skill in text_lower and skill not in found_skills:
+                found_skills.add(skill)
+                
+                # Determine classification based on keywords
+                classification = "core"
+                if any(kw in text_lower for kw in ["required", "must have", "mandatory", "essential"]):
+                    # Check if this skill is near these keywords
+                    skill_pos = text_lower.find(skill)
+                    for kw in ["required", "must have", "mandatory", "essential"]:
+                        kw_pos = text_lower.find(kw)
+                        if kw_pos != -1 and abs(skill_pos - kw_pos) < 200:
+                            classification = "mission_critical"
+                            break
+                elif any(kw in text_lower for kw in ["nice to have", "preferred", "plus", "bonus", "optional"]):
+                    skill_pos = text_lower.find(skill)
+                    for kw in ["nice to have", "preferred", "plus", "bonus", "optional"]:
+                        kw_pos = text_lower.find(kw)
+                        if kw_pos != -1 and abs(skill_pos - kw_pos) < 200:
+                            classification = "optional"
+                            break
+                
+                # Check for years requirement for this specific skill
+                skill_years_pattern = rf'(\d+)\+?\s*years?\s*(?:of\s+)?(?:experience\s+(?:with|in|using)\s+)?' + re.escape(skill)
+                match = re.search(skill_years_pattern, text_lower)
+                skill_min_years = int(match.group(1)) if match else min_years
+                
+                requirements.append({
+                    "name": skill.title(),
+                    "classification": classification,
+                    "minimum_years": skill_min_years,
+                    "is_critical": classification == "mission_critical"
+                })
+        
+        # If no skills found, create a general requirement
+        if not requirements:
+            requirements.append({
+                "name": "General Experience",
+                "classification": "core",
+                "minimum_years": min_years,
+                "is_critical": False
+            })
+        
+        return requirements
     
     def _run_evaluation(self):
         resume_text = self.resume_input.toPlainText().strip()
@@ -431,14 +594,13 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Error", "Please enter resume content")
             return
         
-        try:
-            job_requirements = eval(requirements_text) if requirements_text else []
-        except:
-            job_requirements = []
+        # Parse requirements (supports both plain text and JSON)
+        job_requirements = self._parse_requirements(requirements_text)
         
         self.run_btn.setEnabled(False)
         self.progress_bar.setVisible(True)
         self.progress_bar.setRange(0, 0)
+        self.status_bar.showMessage(f"Found {len(job_requirements)} skills in job requirements...")
         
         self.worker = EvaluationWorker(resume_text, job_requirements, {})
         self.worker.progress.connect(lambda msg: self.status_bar.showMessage(msg))
