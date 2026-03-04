@@ -56,6 +56,7 @@ def build_executable():
         "--name", "TrajectIQ",
         "--clean",
         "--noconfirm",
+        "--paths", str(Path("src").absolute()),  # Add src to Python path
     ]
     
     # Add icon if exists
@@ -65,26 +66,78 @@ def build_executable():
     
     # Add hidden imports
     hidden_imports = [
+        # Standard library - CRITICAL for bundled app
+        "sqlite3",
+        "_sqlite3",
+        "json",
+        "hashlib",
+        "secrets",
+        "getpass",
+        "platform",
+        "uuid",
+        "datetime",
+        "pathlib",
+        "typing",
+        "dataclasses",
+        "enum",
+        "logging",
+        "argparse",
+        "subprocess",
+        "abc",
+        "collections",
+        "functools",
+        "itertools",
+        "re",
+        "io",
+        "os",
+        "sys",
+        # Cryptography
         "cryptography",
         "cryptography.fernet",
         "cryptography.hazmat.primitives",
         "cryptography.hazmat.primitives.asymmetric",
         "cryptography.hazmat.backends",
         "bcrypt",
+        # PyQt5
         "PyQt5",
         "PyQt5.QtCore",
         "PyQt5.QtGui",
         "PyQt5.QtWidgets",
+        # Application modules - CRITICAL!
+        "security",
+        "security.license",
+        "security.rbac",
+        "security.integrity",
+        "core",
+        "core.database",
+        "core.config",
+        "modules",
+        "modules.scoring_engine",
+        "modules.bias_detection",
+        "ui",
+        "ui.main_window",
+        "connectors",
+        "connectors.ats_connector",
+        "connectors.email_connector",
+        "ai_enhancement",
+        "ai_enhancement.semantic_layer",
+        # Resume parsing
+        "PyPDF2",
+        "docx",
+        "lxml",
+        # HTTP
+        "requests",
     ]
     
     for imp in hidden_imports:
         cmd.extend(["--hidden-import", imp])
     
-    # Add data files
+    # Add data files - only static assets, not Python modules
+    import platform
+    separator = ';' if platform.system() == 'Windows' else ':'
+    
+    # Only add assets as data files - Python modules are handled via --paths and hidden imports
     if Path("assets").exists():
-        # Use correct separator: ';' for Windows, ':' for Linux/Mac
-        import platform
-        separator = ';' if platform.system() == 'Windows' else ':'
         cmd.extend([f"--add-data=assets{separator}assets"])
     
     # Main entry point
