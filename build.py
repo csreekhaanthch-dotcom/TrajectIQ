@@ -132,13 +132,21 @@ def build_executable():
     for imp in hidden_imports:
         cmd.extend(["--hidden-import", imp])
     
-    # Add data files - only static assets, not Python modules
+    # Add data files - include ALL source modules at bundle root
     import platform
     separator = ';' if platform.system() == 'Windows' else ':'
     
-    # Only add assets as data files - Python modules are handled via --paths and hidden imports
+    # Add assets
     if Path("assets").exists():
         cmd.extend([f"--add-data=assets{separator}assets"])
+    
+    # Add ALL source modules to bundle root - this is critical!
+    # Each src/package becomes package in the bundle
+    src_packages = ["security", "core", "modules", "ui", "connectors", "ai_enhancement"]
+    for pkg in src_packages:
+        pkg_path = Path("src") / pkg
+        if pkg_path.exists():
+            cmd.extend([f"--add-data={pkg_path}{separator}{pkg}"])
     
     # Main entry point
     cmd.append("src/main.py")
