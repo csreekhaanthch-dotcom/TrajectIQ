@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { io, Socket } from 'socket.io-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,13 +25,15 @@ export default function SocketDemo() {
   const [inputMessage, setInputMessage] = useState('');
   const [username, setUsername] = useState('');
   const [isUsernameSet, setIsUsernameSet] = useState(false);
-  const [socket, setSocket] = useState<any>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
+  
+  // Use ref for socket to avoid setState in effect
+  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
     // Connect to websocket server
-    // Never use PORT in the URL, alyways use XTransformPort
+    // Never use PORT in the URL, always use XTransformPort
     // DO NOT change the path, it is used by Caddy to forward the request to the correct port
     const socketInstance = io('/?XTransformPort=3003', {
       transports: ['websocket', 'polling'],
@@ -40,9 +42,10 @@ export default function SocketDemo() {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       timeout: 10000
-    })
+    });
 
-    setSocket(socketInstance);
+    // Store in ref
+    socketRef.current = socketInstance;
 
     socketInstance.on('connect', () => {
       setIsConnected(true);
@@ -76,26 +79,27 @@ export default function SocketDemo() {
     });
 
     return () => {
+      socketRef.current = null;
       socketInstance.disconnect();
     };
   }, []);
 
-  const handleJoin = () => {
-    if (socket && username.trim() && isConnected) {
-      socket.emit('join', { username: username.trim() });
+  const handleJoin = useCallback(() => {
+    if (socketRef.current && username.trim() && isConnected) {
+      socketRef.current.emit('join', { username: username.trim() });
       setIsUsernameSet(true);
     }
-  };
+  }, [username, isConnected]);
 
-  const sendMessage = () => {
-    if (socket && inputMessage.trim() && username.trim()) {
-      socket.emit('message', {
+  const sendMessage = useCallback(() => {
+    if (socketRef.current && inputMessage.trim() && username.trim()) {
+      socketRef.current.emit('message', {
         content: inputMessage.trim(),
         username: username.trim()
       });
       setInputMessage('');
     }
-  };
+  }, [inputMessage, username]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {

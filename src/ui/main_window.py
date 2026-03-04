@@ -36,6 +36,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from security.license import get_license_manager, LicenseStatus
 from modules.scoring_engine import run_full_evaluation
 
+# Import REAL connectors from the connectors module
+from connectors.email_connector import EmailConnector as RealEmailConnector, EmailMessage
+from connectors.ats_connector import get_ats_connector, BaseATSConnector
+
 
 # =============================================================================
 # MODERN STYLESHEETS
@@ -529,189 +533,240 @@ class EvaluationWorker(QThread):
 
 
 # =============================================================================
-# EMAIL CONNECTOR
+# EMAIL CONNECTOR WRAPPER (Real Implementation)
 # =============================================================================
 
-class EmailConnector:
-    """Email connection for extracting resumes"""
+class EmailConnectorWrapper:
+    """
+    Wrapper for real IMAP email connector.
+    Provides actual connection to email servers.
+    """
     
     def __init__(self):
+        self._real_connector = None
         self.connected = False
-        self.settings = {
-            'host': '',
-            'port': 993,
-            'username': '',
-            'password': '',
-            'use_ssl': True
-        }
+        self._last_error = None
     
-    def connect(self, host: str, port: int, username: str, password: str, use_ssl: bool = True) -> bool:
-        """Connect to email server"""
-        self.settings = {
-            'host': host,
-            'port': port,
-            'username': username,
-            'password': password,
-            'use_ssl': use_ssl
-        }
-        self.connected = True
-        return True
+    def connect(self, host: str, port: int, username: str, password: str, use_ssl: bool = True) -> tuple:
+        """
+        Actually connect to email server using IMAP.
+        
+        Returns:
+            tuple: (success: bool, error_message: str or None)
+        """
+        try:
+            self._last_error = None
+            
+            # Create real connector
+            self._real_connector = RealEmailConnector(
+                server=host,
+                port=port,
+                username=username,
+                password=password,
+                use_ssl=use_ssl
+            )
+            
+            # Actually attempt to connect
+            if self._real_connector.connect():
+                self.connected = True
+                return True, None
+            else:
+                self._last_error = "Connection failed - check credentials"
+                return False, self._last_error
+                
+        except Exception as e:
+            self._last_error = str(e)
+            self.connected = False
+            return False, self._last_error
     
     def disconnect(self):
         """Disconnect from email server"""
+        if self._real_connector:
+            try:
+                self._real_connector.disconnect()
+            except:
+                pass
+        self._real_connector = None
         self.connected = False
+    
+    def test_connection(self) -> tuple:
+        """
+        Test if connection is still valid.
+        
+        Returns:
+            tuple: (is_connected: bool, error_message: str or None)
+        """
+        if not self._real_connector:
+            return False, "No connection established"
+        
+        try:
+            # Try to list mailboxes as a connection test
+            if self._real_connector._connection:
+                status, _ = self._real_connector._connection.list()
+                if status == 'OK':
+                    return True, None
+            return False, "Connection lost"
+        except Exception as e:
+            return False, str(e)
     
     def scan_for_resumes(self, folder: str = "INBOX", days: int = 30) -> List[Dict]:
-        """Scan emails for resume attachments"""
-        return [
-            {
-                'id': 'email_001',
-                'from': 'john.doe@email.com',
-                'subject': 'Application for Senior Developer Position',
-                'date': datetime.now().strftime('%Y-%m-%d'),
-                'attachment': 'John_Doe_Resume.pdf',
-                'resume_text': """
-John Doe
-Senior Software Developer
-john.doe@email.com | (555) 123-4567
-
-EXPERIENCE
-Senior Developer at Google (2020-Present)
-- Led team of 8 engineers on cloud infrastructure
-- Improved system performance by 40%
-- Implemented microservices architecture
-
-Developer at Microsoft (2017-2020)
-- Built REST APIs handling 1M+ requests/day
-- Developed CI/CD pipelines
-
-SKILLS
-Python, JavaScript, AWS, Docker, Kubernetes, PostgreSQL, React
-                """
-            },
-            {
-                'id': 'email_002',
-                'from': 'jane.smith@email.com',
-                'subject': 'Resume - Full Stack Developer Application',
-                'date': datetime.now().strftime('%Y-%m-%d'),
-                'attachment': 'Jane_Smith_CV.docx',
-                'resume_text': """
-Jane Smith
-Full Stack Developer
-jane.smith@email.com
-
-EXPERIENCE
-Full Stack Developer at Amazon (2019-Present)
-- Developed e-commerce features used by millions
-- Led migration to React and Node.js
-- Reduced page load time by 60%
-
-Junior Developer at Startup (2017-2019)
-- Built MVP from scratch
-- Implemented payment integration
-
-SKILLS
-React, Node.js, Python, MongoDB, AWS, TypeScript
-                """
-            }
-        ]
+        """
+        Actually scan emails for resume attachments.
+        
+        Args:
+            folder: IMAP folder to scan
+            days: Number of days to look back
+            
+        Returns:
+            List of dictionaries with email and resume data
+        """
+        if not self.connected or not self._real_connector:
+            return []
+        
+        try:
+            # Calculate since date
+            from datetime import timedelta
+            since_date = datetime.utcnow() - timedelta(days=days)
+            
+            # Fetch resume emails from real server
+            messages = self._real_connector.fetch_resumes(
+                limit=100,
+                unseen_only=False,
+                since_date=since_date
+            )
+            
+            # Convert to UI-friendly format
+            results = []
+            for msg in messages:
+                if msg.is_resume:
+                    resume_text = msg.body_text
+                    
+                    # If there are attachments, note them
+                    attachment_name = ""
+                    if msg.attachments:
+                        attachment_name = msg.attachments[0].filename
+                    
+                    results.append({
+                        'id': msg.message_id,
+                        'from': msg.sender,
+                        'subject': msg.subject,
+                        'date': msg.received_at.strftime('%Y-%m-%d %H:%M'),
+                        'attachment': attachment_name,
+                        'resume_text': resume_text,
+                        'confidence': msg.confidence
+                    })
+            
+            return results
+            
+        except Exception as e:
+            logging.error(f"Error scanning emails: {e}")
+            return []
 
 
 # =============================================================================
-# ATS CONNECTOR
+# ATS CONNECTOR WRAPPER (Real Implementation)
 # =============================================================================
 
-class ATSConnector:
-    """ATS integration for fetching candidates"""
+class ATSConnectorWrapper:
+    """
+    Wrapper for real ATS connectors.
+    Provides actual connection to ATS APIs.
+    """
     
-    SUPPORTED_SYSTEMS = ['Greenhouse', 'Lever', 'Workday', 'SmartRecruiters', 'Jobvite']
+    SUPPORTED_SYSTEMS = ['Greenhouse', 'Lever', 'Workable']
     
     def __init__(self):
+        self._real_connector = None
         self.connected = False
         self.system_type = None
-        self.api_key = ''
-        self.company_id = ''
+        self._last_error = None
     
-    def connect(self, system_type: str, api_key: str, company_id: str = '') -> bool:
-        """Connect to ATS system"""
-        if system_type not in self.SUPPORTED_SYSTEMS:
-            return False
+    def connect(self, system_type: str, api_key: str, company_id: str = '') -> tuple:
+        """
+        Actually connect to ATS system using API.
         
-        self.system_type = system_type
-        self.api_key = api_key
-        self.company_id = company_id
-        self.connected = True
-        return True
+        Returns:
+            tuple: (success: bool, error_message: str or None)
+        """
+        try:
+            self._last_error = None
+            self.system_type = system_type.lower()
+            
+            # Build kwargs for connector
+            kwargs = {'api_key': api_key}
+            if system_type.lower() == 'workable' and company_id:
+                kwargs['subdomain'] = company_id
+            
+            # Create real connector
+            self._real_connector = get_ats_connector(system_type, **kwargs)
+            
+            # Test connection by fetching jobs
+            try:
+                jobs = self._real_connector.get_jobs()
+                self.connected = True
+                return True, None
+            except Exception as e:
+                self._last_error = f"API test failed: {str(e)}"
+                return False, self._last_error
+                
+        except Exception as e:
+            self._last_error = str(e)
+            self.connected = False
+            return False, self._last_error
     
     def disconnect(self):
         """Disconnect from ATS"""
+        self._real_connector = None
         self.connected = False
     
     def get_jobs(self) -> List[Dict]:
-        """Get all job postings"""
-        return [
-            {'id': 'job_001', 'title': 'Senior Python Developer', 'department': 'Engineering', 'candidates': 45},
-            {'id': 'job_002', 'title': 'Full Stack Engineer', 'department': 'Engineering', 'candidates': 78},
-            {'id': 'job_003', 'title': 'DevOps Engineer', 'department': 'Infrastructure', 'candidates': 32},
-        ]
+        """Get all job postings from ATS"""
+        if not self.connected or not self._real_connector:
+            return []
+        
+        try:
+            jobs = self._real_connector.get_jobs()
+            return jobs
+        except Exception as e:
+            logging.error(f"Error fetching jobs: {e}")
+            return []
     
     def get_candidates(self, job_id: str) -> List[Dict]:
-        """Get candidates for a job"""
-        return [
-            {
-                'id': 'cand_001',
-                'name': 'Alex Johnson',
-                'email': 'alex.j@email.com',
-                'status': 'New',
-                'applied_date': '2024-01-15',
-                'resume_text': """
-Alex Johnson
-Senior Python Developer
-alex.j@email.com
-
-EXPERIENCE
-Senior Python Developer at Netflix (2021-Present)
-- Developed recommendation engine components
-- Built high-throughput APIs
-- Led team of 5 developers
-
-Python Developer at Spotify (2018-2021)
-- Built data pipelines
-- Implemented ML models in production
-
-SKILLS
-Python, Django, FastAPI, AWS, Machine Learning, PostgreSQL
-                """
-            },
-            {
-                'id': 'cand_002',
-                'name': 'Sam Williams',
-                'email': 'sam.w@email.com',
-                'status': 'In Review',
-                'applied_date': '2024-01-14',
-                'resume_text': """
-Sam Williams
-DevOps Engineer
-sam.w@email.com
-
-EXPERIENCE
-DevOps Engineer at Uber (2020-Present)
-- Managed Kubernetes clusters
-- Implemented GitOps workflows
-- Reduced deployment time by 80%
-
-SRE at Airbnb (2017-2020)
-- Built monitoring systems
-- Automated infrastructure
-
-SKILLS
-Docker, Kubernetes, Terraform, AWS, CI/CD, Python
-                """
-            }
-        ]
+        """Get candidates for a specific job"""
+        if not self.connected or not self._real_connector:
+            return []
+        
+        try:
+            candidates = self._real_connector.get_candidates(job_id=job_id)
+            
+            # Convert ATSCandidate objects to dictionaries
+            results = []
+            for cand in candidates:
+                results.append({
+                    'id': cand.candidate_id,
+                    'name': f"{cand.first_name} {cand.last_name}",
+                    'email': cand.email,
+                    'phone': cand.phone,
+                    'status': cand.status,
+                    'stage': cand.stage,
+                    'applied_date': cand.applied_at.strftime('%Y-%m-%d') if cand.applied_at else '',
+                    'resume_url': cand.resume_url,
+                    'resume_text': cand.resume_text,
+                    'job_title': cand.job_title,
+                    'source': cand.source,
+                    'tags': cand.tags
+                })
+            
+            return results
+            
+        except Exception as e:
+            logging.error(f"Error fetching candidates: {e}")
+            return []
     
     def push_evaluation(self, candidate_id: str, score: int, grade: str, notes: str) -> bool:
         """Push evaluation results back to ATS"""
+        # This would need to be implemented in each connector
+        # For now, return True to indicate acceptance
         return True
 
 
@@ -725,12 +780,12 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("TrajectIQ Enterprise v2.0 - Intelligence-Driven Hiring")
+        self.setWindowTitle("TrajectIQ Enterprise v3.0 - Intelligence-Driven Hiring")
         self.setMinimumSize(1400, 900)
         
-        # Initialize connectors
-        self.email_connector = EmailConnector()
-        self.ats_connector = ATSConnector()
+        # Initialize connectors with REAL implementations
+        self.email_connector = EmailConnectorWrapper()
+        self.ats_connector = ATSConnectorWrapper()
         self.discovered_resumes = []
         self.evaluation_results = []
         
@@ -1542,26 +1597,48 @@ class MainWindow(QMainWindow):
         QMessageBox.information(self, "Complete", f"Evaluated {len(self.discovered_resumes)} resumes!")
     
     def _connect_email(self):
-        """Connect to email server"""
-        host = self.email_host.text()
+        """Connect to email server with proper validation"""
+        host = self.email_host.text().strip()
         port = self.email_port.value()
-        user = self.email_user.text()
+        user = self.email_user.text().strip()
         password = self.email_pass.text()
         use_ssl = self.email_ssl.isChecked()
         
-        if not all([host, user, password]):
-            QMessageBox.warning(self, "Error", "Please fill in all required fields")
+        # Validate inputs
+        if not host:
+            QMessageBox.warning(self, "Missing Information", "Please enter the email server host (e.g., imap.gmail.com)")
+            return
+        if not user:
+            QMessageBox.warning(self, "Missing Information", "Please enter your email username/address")
+            return
+        if not password:
+            QMessageBox.warning(self, "Missing Information", "Please enter your password")
             return
         
-        try:
-            self.email_connector.connect(host, port, user, password, use_ssl)
+        # Show connecting status
+        self.status_bar.showMessage("Connecting to email server...")
+        QApplication.processEvents()
+        
+        # Actually attempt connection
+        success, error = self.email_connector.connect(host, port, user, password, use_ssl)
+        
+        if success:
             self.email_connect_btn.setEnabled(False)
             self.email_disconnect_btn.setEnabled(True)
             self.scan_email_btn.setEnabled(True)
-            self.status_bar.showMessage("Connected to email server")
-            QMessageBox.information(self, "Success", "Connected to email server!")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to connect: {str(e)}")
+            self.status_bar.showMessage(f"Connected to {host} as {user}")
+            QMessageBox.information(self, "Connection Successful", 
+                f"Successfully connected to {host}\n\nYou can now scan for resumes.")
+        else:
+            error_msg = error or "Unknown error occurred"
+            self.status_bar.showMessage("Connection failed")
+            QMessageBox.critical(self, "Connection Failed", 
+                f"Could not connect to email server.\n\nError: {error_msg}\n\n"
+                "Please check:\n"
+                "• Server address and port are correct\n"
+                "• Username and password are correct\n"
+                "• For Gmail, use an App Password (not your regular password)\n"
+                "• SSL/TLS is enabled for secure servers")
     
     def _disconnect_email(self):
         """Disconnect from email"""
@@ -1572,49 +1649,94 @@ class MainWindow(QMainWindow):
         self.status_bar.showMessage("Disconnected from email server")
     
     def _scan_email(self):
-        """Scan email for resumes"""
-        days = self.email_days.value()
-        self.status_bar.showMessage("Scanning for resumes...")
-        
-        resumes = self.email_connector.scan_for_resumes(days=days)
-        self.discovered_resumes.extend(resumes)
-        
-        # Update table
-        self.email_resumes_table.setRowCount(len(resumes))
-        for i, r in enumerate(resumes):
-            self.email_resumes_table.setItem(i, 0, QTableWidgetItem(r.get('from', '')))
-            self.email_resumes_table.setItem(i, 1, QTableWidgetItem(r.get('subject', '')))
-            self.email_resumes_table.setItem(i, 2, QTableWidgetItem(r.get('date', '')))
-            self.email_resumes_table.setItem(i, 3, QTableWidgetItem(r.get('attachment', '')))
-            
-            # Actions
-            eval_btn = QPushButton("Evaluate")
-            eval_btn.setStyleSheet(ModernStyles.BUTTON)
-            eval_btn.clicked.connect(lambda checked, r=r: self._evaluate_single(r))
-            self.email_resumes_table.setCellWidget(i, 4, eval_btn)
-        
-        self.status_bar.showMessage(f"Found {len(resumes)} resumes")
-    
-    def _connect_ats(self):
-        """Connect to ATS"""
-        system = self.ats_type.currentText()
-        api_key = self.ats_api_key.text()
-        company = self.ats_company.text()
-        
-        if not api_key:
-            QMessageBox.warning(self, "Error", "Please enter API key")
+        """Scan email for resumes with proper error handling"""
+        if not self.email_connector.connected:
+            QMessageBox.warning(self, "Not Connected", 
+                "Please connect to your email server first before scanning.")
             return
         
+        days = self.email_days.value()
+        self.status_bar.showMessage(f"Scanning emails from the last {days} days...")
+        self.progress_bar.setVisible(True)
+        self.progress_bar.setRange(0, 0)  # Indeterminate progress
+        QApplication.processEvents()
+        
         try:
-            self.ats_connector.connect(system, api_key, company)
+            resumes = self.email_connector.scan_for_resumes(days=days)
+            
+            self.progress_bar.setVisible(False)
+            
+            if not resumes:
+                self.status_bar.showMessage("No resume emails found")
+                QMessageBox.information(self, "Scan Complete", 
+                    f"No emails with resumes were found in the last {days} days.\n\n"
+                    "Tips:\n"
+                    "• Make sure there are emails with resume attachments\n"
+                    "• Check the email folder being scanned (default: INBOX)\n"
+                    "• Try increasing the number of days to scan")
+                return
+            
+            self.discovered_resumes.extend(resumes)
+            
+            # Update table
+            self.email_resumes_table.setRowCount(len(resumes))
+            for i, r in enumerate(resumes):
+                self.email_resumes_table.setItem(i, 0, QTableWidgetItem(r.get('from', '')))
+                self.email_resumes_table.setItem(i, 1, QTableWidgetItem(r.get('subject', '')))
+                self.email_resumes_table.setItem(i, 2, QTableWidgetItem(r.get('date', '')))
+                self.email_resumes_table.setItem(i, 3, QTableWidgetItem(r.get('attachment', '')))
+                
+                # Actions
+                eval_btn = QPushButton("Evaluate")
+                eval_btn.setStyleSheet(ModernStyles.BUTTON)
+                eval_btn.clicked.connect(lambda checked, r=r: self._evaluate_single(r))
+                self.email_resumes_table.setCellWidget(i, 4, eval_btn)
+            
+            self.status_bar.showMessage(f"Found {len(resumes)} resume(s)")
+            
+        except Exception as e:
+            self.progress_bar.setVisible(False)
+            self.status_bar.showMessage("Scan failed")
+            QMessageBox.critical(self, "Scan Error", 
+                f"An error occurred while scanning emails:\n\n{str(e)}")
+    
+    def _connect_ats(self):
+        """Connect to ATS with proper validation"""
+        system = self.ats_type.currentText()
+        api_key = self.ats_api_key.text().strip()
+        company = self.ats_company.text().strip()
+        
+        if not api_key:
+            QMessageBox.warning(self, "Missing Information", 
+                "Please enter your ATS API key")
+            return
+        
+        # Show connecting status
+        self.status_bar.showMessage(f"Connecting to {system}...")
+        QApplication.processEvents()
+        
+        # Actually attempt connection
+        success, error = self.ats_connector.connect(system, api_key, company)
+        
+        if success:
             self.ats_connect_btn.setEnabled(False)
             self.ats_disconnect_btn.setEnabled(True)
             self.status_bar.showMessage(f"Connected to {system}")
             
             # Load jobs
             self._load_ats_jobs()
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to connect: {str(e)}")
+            
+            QMessageBox.information(self, "Connection Successful", 
+                f"Successfully connected to {system}.\n\nJobs have been loaded.")
+        else:
+            error_msg = error or "Unknown error occurred"
+            self.status_bar.showMessage("Connection failed")
+            QMessageBox.critical(self, "Connection Failed", 
+                f"Could not connect to {system}.\n\nError: {error_msg}\n\n"
+                "Please check:\n"
+                "• API key is correct and has not expired\n"
+                "• API key has the necessary permissions\n"
+                "• Company ID/subdomain is correct (if required)")
     
     def _disconnect_ats(self):
         """Disconnect from ATS"""
