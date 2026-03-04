@@ -16,6 +16,10 @@ from dataclasses import dataclass
 from abc import ABC, abstractmethod
 
 
+# Supported ATS providers
+SUPPORTED_SYSTEMS = ["Greenhouse", "Lever", "Workable"]
+
+
 @dataclass
 class ATSCandidate:
     """Candidate from ATS"""

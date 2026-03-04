@@ -16,7 +16,8 @@ from .ats_connector import (
     LeverConnector,
     WorkableConnector,
     ATSCandidate,
-    get_ats_connector
+    get_ats_connector,
+    SUPPORTED_SYSTEMS
 )
 
 __all__ = [
@@ -30,5 +31,6 @@ __all__ = [
     'LeverConnector',
     'WorkableConnector',
     'ATSCandidate',
-    'get_ats_connector'
+    'get_ats_connector',
+    'SUPPORTED_SYSTEMS'
 ]

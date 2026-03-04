@@ -38,7 +38,7 @@ from modules.scoring_engine import run_full_evaluation
 
 # Import REAL connectors from the connectors module
 from connectors.email_connector import EmailConnector as RealEmailConnector, EmailMessage
-from connectors.ats_connector import get_ats_connector, BaseATSConnector
+from connectors.ats_connector import get_ats_connector, BaseATSConnector, SUPPORTED_SYSTEMS
 
 
 # =============================================================================
@@ -1148,7 +1148,7 @@ class MainWindow(QMainWindow):
         
         self.ats_type = QComboBox()
         self.ats_type.setStyleSheet(ModernStyles.INPUT)
-        self.ats_type.addItems(ATSConnector.SUPPORTED_SYSTEMS)
+        self.ats_type.addItems(SUPPORTED_SYSTEMS)
         conn_layout.addRow("ATS System:", self.ats_type)
         
         self.ats_api_key = QLineEdit()
