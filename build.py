@@ -82,7 +82,10 @@ def build_executable():
     
     # Add data files
     if Path("assets").exists():
-        cmd.extend(["--add-data", "assets;assets"])
+        # Use correct separator: ';' for Windows, ':' for Linux/Mac
+        import platform
+        separator = ';' if platform.system() == 'Windows' else ':'
+        cmd.extend([f"--add-data=assets{separator}assets"])
     
     # Main entry point
     cmd.append("src/main.py")
@@ -93,7 +96,10 @@ def build_executable():
     result = subprocess.run(cmd, cwd=Path(__file__).parent)
     
     if result.returncode == 0:
-        exe_path = Path("dist/TrajectIQ.exe")
+        # Check for executable based on platform
+        import platform
+        exe_name = "TrajectIQ.exe" if platform.system() == 'Windows' else "TrajectIQ"
+        exe_path = Path(f"dist/{exe_name}")
         if exe_path.exists():
             size_mb = exe_path.stat().st_size / (1024 * 1024)
             print(f"\nBuild successful!")
