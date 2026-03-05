@@ -524,8 +524,8 @@ class SkillEvaluator(BaseEvaluator):
         for req in job_requirements:
             req_name = req.get("name", "").lower()
             req_classification = SkillClassification(req.get("classification", "core"))
-            req_min_years = req.get("minimum_years", 0)
-            req_min_proficiency = req.get("minimum_proficiency", "intermediate")
+            req_min_years = req.get("minimum_years") or 0  # Handle None explicitly
+            req_min_proficiency = req.get("minimum_proficiency") or "intermediate"
             is_critical = req.get("is_critical", False) or req_classification == SkillClassification.MISSION_CRITICAL
             
             # Find matching candidate skill
