@@ -1158,7 +1158,7 @@ class MainWindow(QMainWindow):
             if line and len(line) > 3:
                 requirements.append({
                     'name': line,
-                    'classification': 'important',
+                    'classification': 'core',  # Valid: mission_critical, core, supporting, optional
                     'minimum_years': None
                 })
         
