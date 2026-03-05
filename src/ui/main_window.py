@@ -19,13 +19,93 @@ from PyQt5.QtWidgets import (
     QStatusBar, QToolBar, QAction, QMenu, QMenuBar, QSplitter,
     QTreeWidget, QTreeWidgetItem, QFrame, QScrollArea, QDialog,
     QDialogButtonBox, QGridLayout, QFileDialog, QListWidget, 
-    QListWidgetItem, QSizePolicy, QPlainTextEdit, QShortcut
+    QListWidgetItem, QSizePolicy, QPlainTextEdit, QShortcut,
+    QLayout, QLayoutItem
 )
-from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal, QSize
+from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal, QSize, QRect
 from PyQt5.QtGui import (
     QFont, QIcon, QColor, QPalette, QPainter, QPen, QBrush,
     QLinearGradient, QFontMetrics, QKeySequence
 )
+
+
+# =============================================================================
+# FLOW LAYOUT - Custom implementation for tag-style buttons
+# =============================================================================
+
+class FlowLayout(QLayout):
+    """A flow layout that arranges widgets in rows, wrapping as needed"""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._items = []
+        self._spacing = 6
+        
+    def addItem(self, item):
+        self._items.append(item)
+        
+    def count(self):
+        return len(self._items)
+        
+    def itemAt(self, index):
+        if 0 <= index < len(self._items):
+            return self._items[index]
+        return None
+        
+    def takeAt(self, index):
+        if 0 <= index < len(self._items):
+            return self._items.pop(index)
+        return None
+        
+    def expandingDirections(self):
+        return Qt.Orientations(0)
+        
+    def hasHeightForWidth(self):
+        return True
+        
+    def heightForWidth(self, width):
+        return self._do_layout(QRect(0, 0, width, 0), True)
+        
+    def setGeometry(self, rect):
+        super().setGeometry(rect)
+        self._do_layout(rect, False)
+        
+    def sizeHint(self):
+        return self.minimumSize()
+        
+    def minimumSize(self):
+        size = QSize()
+        for item in self._items:
+            size = size.expandedTo(item.minimumSize())
+        return size
+        
+    def _do_layout(self, rect, test_only):
+        x = rect.x()
+        y = rect.y()
+        line_height = 0
+        
+        for item in self._items:
+            widget = item.widget()
+            if widget is None:
+                continue
+                
+            space_x = self._spacing
+            space_y = self._spacing
+            next_x = x + item.sizeHint().width() + space_x
+            
+            if next_x - space_x > rect.right() and line_height > 0:
+                x = rect.x()
+                y = y + line_height + space_y
+                next_x = x + item.sizeHint().width() + space_x
+                line_height = 0
+                
+            if not test_only:
+                item.setGeometry(QRect(x, y, item.sizeHint().width(), item.sizeHint().height()))
+                
+            x = next_x
+            line_height = max(line_height, item.sizeHint().height())
+            
+        return y + line_height - rect.y()
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -925,7 +1005,7 @@ class MainWindow(QMainWindow):
         concerns_group = QGroupBox("⚠️ Concerns & Gaps")
         concerns_layout = QVBoxLayout(concerns_group)
         self.concerns_widget = QWidget()
-        self.concerns_layout = QFlowLayout(self.concerns_widget)
+        self.concerns_layout = FlowLayout(self.concerns_widget)
         concerns_layout.addWidget(self.concerns_widget)
         details_layout.addWidget(concerns_group)
         
@@ -1205,36 +1285,11 @@ class MainWindow(QMainWindow):
 
 
 # =============================================================================
-# FLOW LAYOUT (for concern tags)
-# =============================================================================
-
-class QFlowLayout(QWidget):
-    """Simple flow layout using grid"""
-    
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self._layout = QGridLayout(self)
-        self._layout.setSpacing(6)
-        self._layout.setContentsMargins(4, 4, 4, 4)
-        self._items = []
-    
-    def addWidget(self, widget):
-        col = len(self._items) % 2
-        row = len(self._items) // 2
-        self._layout.addWidget(widget, row, col)
-        self._items.append(widget)
-    
-    def clear(self):
-        for item in self._items:
-            item.deleteLater()
-        self._items.clear()
-
-
-# =============================================================================
 # ENTRY POINT
 # =============================================================================
 
-def main():
+def run_application():
+    """Main entry point called from main.py"""
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
     
@@ -1252,8 +1307,13 @@ def main():
     window = MainWindow()
     window.show()
     
-    sys.exit(app.exec_())
+    return app.exec_()
+
+
+def main():
+    """Standalone entry point"""
+    return run_application()
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
