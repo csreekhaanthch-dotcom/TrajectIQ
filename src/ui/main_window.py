@@ -1,17 +1,15 @@
 """
-TrajectIQ Enterprise Desktop UI - Version 2.0
+TrajectIQ Enterprise Desktop UI - Version 3.0
 ==============================================
-Professional PyQt5 desktop interface with modern design.
+Clean 3-panel layout with modern design.
 """
 
 import sys
 import os
 import json
-import re
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 from datetime import datetime
-from dataclasses import asdict
 
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
@@ -20,484 +18,497 @@ from PyQt5.QtWidgets import (
     QSpinBox, QDoubleSpinBox, QCheckBox, QMessageBox, QProgressBar,
     QStatusBar, QToolBar, QAction, QMenu, QMenuBar, QSplitter,
     QTreeWidget, QTreeWidgetItem, QFrame, QScrollArea, QDialog,
-    QDialogButtonBox, QDateEdit, QLabel, QStackedWidget, QGridLayout,
-    QFileDialog, QInputDialog, QListWidget, QListWidgetItem, QSizePolicy
+    QDialogButtonBox, QGridLayout, QFileDialog, QListWidget, 
+    QListWidgetItem, QSizePolicy, QPlainTextEdit, QShortcut
 )
-from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal, QDate, QRect, QPointF, QSize
+from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal, QSize
 from PyQt5.QtGui import (
-    QFont, QIcon, QColor, QPalette, QStandardItemModel, QStandardItem,
-    QPainter, QPen, QBrush, QLinearGradient, QRadialGradient, QPainterPath,
-    QFontMetrics
+    QFont, QIcon, QColor, QPalette, QPainter, QPen, QBrush,
+    QLinearGradient, QFontMetrics, QKeySequence
 )
 
-# Add parent to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from security.license import get_license_manager, LicenseStatus
 from modules.scoring_engine import run_full_evaluation
-
-# Import REAL connectors from the connectors module
-from connectors.email_connector import EmailConnector as RealEmailConnector, EmailMessage
-from connectors.ats_connector import get_ats_connector, BaseATSConnector, SUPPORTED_SYSTEMS
+from connectors.email_connector import EmailConnector as RealEmailConnector
+from connectors.ats_connector import get_ats_connector, SUPPORTED_SYSTEMS
 
 
 # =============================================================================
-# MODERN STYLESHEETS
+# STYLESHEET
 # =============================================================================
 
-class ModernStyles:
-    """Modern dark theme stylesheets"""
-    
-    MAIN_WINDOW = """
-    QMainWindow {
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-            stop:0 #0f0c29, stop:0.5 #302b63, stop:1 #24243e);
-    }
-    """
-    
-    WIDGET = """
-    QWidget {
-        background-color: transparent;
-        color: #eaeaea;
-        font-family: 'Segoe UI', 'SF Pro Display', Arial, sans-serif;
-        font-size: 13px;
-    }
-    """
-    
-    CARD = """
-    QFrame#card {
-        background-color: rgba(30, 30, 50, 200);
-        border: 1px solid rgba(100, 100, 150, 80);
-        border-radius: 15px;
-        padding: 15px;
-    }
-    QFrame#card:hover {
-        border: 1px solid rgba(124, 131, 253, 150);
-        background-color: rgba(40, 40, 70, 220);
-    }
-    """
-    
-    GROUP_BOX = """
-    QGroupBox {
-        background-color: rgba(25, 25, 45, 200);
-        border: 1px solid rgba(100, 100, 150, 60);
-        border-radius: 12px;
-        margin-top: 15px;
-        padding-top: 15px;
-        font-weight: bold;
-        font-size: 14px;
-    }
-    QGroupBox::title {
-        subcontrol-origin: margin;
-        left: 15px;
-        padding: 0 10px;
-        color: #7c83fd;
-    }
-    """
-    
-    INPUT = """
-    QLineEdit, QTextEdit, QComboBox, QSpinBox, QDoubleSpinBox {
-        background-color: rgba(20, 20, 40, 220);
-        border: 1px solid rgba(100, 100, 150, 80);
-        border-radius: 8px;
-        padding: 10px;
-        color: #eaeaea;
-        font-size: 13px;
-        selection-background-color: #7c83fd;
-    }
-    QLineEdit:focus, QTextEdit:focus {
-        border: 2px solid #7c83fd;
-        background-color: rgba(30, 30, 55, 240);
-    }
-    QLineEdit:hover, QTextEdit:hover {
-        border: 1px solid rgba(124, 131, 253, 150);
-    }
-    """
-    
-    BUTTON = """
-    QPushButton {
-        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-            stop:0 #7c83fd, stop:1 #5c63fd);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        padding: 12px 25px;
-        font-weight: bold;
-        font-size: 14px;
-    }
-    QPushButton:hover {
-        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-            stop:0 #949aff, stop:1 #7c83fd);
-    }
-    QPushButton:pressed {
-        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-            stop:0 #5c63fd, stop:1 #4c53fd);
-    }
-    QPushButton:disabled {
-        background: #3a3a5a;
-        color: #666666;
-    }
-    """
-    
-    BUTTON_SUCCESS = """
-    QPushButton {
-        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-            stop:0 #51cf66, stop:1 #37b24d);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        padding: 12px 25px;
-        font-weight: bold;
-        font-size: 14px;
-    }
-    QPushButton:hover {
-        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-            stop:0 #69db7c, stop:1 #51cf66);
-    }
-    """
-    
-    BUTTON_DANGER = """
-    QPushButton {
-        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-            stop:0 #ff6b6b, stop:1 #fa5252);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        padding: 12px 25px;
-        font-weight: bold;
-        font-size: 14px;
-    }
-    QPushButton:hover {
-        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-            stop:0 #ff8787, stop:1 #ff6b6b);
-    }
-    """
-    
-    TAB_WIDGET = """
-    QTabWidget::pane {
-        border: 1px solid rgba(100, 100, 150, 60);
-        border-radius: 10px;
-        background-color: transparent;
-    }
-    QTabBar::tab {
-        background-color: rgba(30, 30, 50, 180);
-        color: #888888;
-        padding: 12px 25px;
-        margin-right: 3px;
-        border-top-left-radius: 10px;
-        border-top-right-radius: 10px;
-        font-weight: bold;
-        font-size: 13px;
-    }
-    QTabBar::tab:selected {
-        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-            stop:0 #7c83fd, stop:1 #5c63fd);
-        color: white;
-    }
-    QTabBar::tab:hover:!selected {
-        background-color: rgba(50, 50, 80, 200);
-        color: #aaaaaa;
-    }
-    """
-    
-    TABLE = """
-    QTableWidget {
-        background-color: rgba(20, 20, 40, 200);
-        border: 1px solid rgba(100, 100, 150, 60);
-        border-radius: 10px;
-        gridline-color: rgba(100, 100, 150, 40);
-        selection-background-color: rgba(124, 131, 253, 100);
-    }
-    QTableWidget::item {
-        padding: 10px;
-        border-bottom: 1px solid rgba(100, 100, 150, 30);
-    }
-    QTableWidget::item:selected {
-        background-color: rgba(124, 131, 253, 100);
-    }
-    QHeaderView::section {
-        background-color: rgba(40, 40, 70, 220);
-        color: #7c83fd;
-        padding: 12px;
-        border: none;
-        border-bottom: 2px solid #7c83fd;
-        font-weight: bold;
-        font-size: 12px;
-    }
-    """
-    
-    SCROLL_AREA = """
-    QScrollArea {
-        border: none;
-        background-color: transparent;
-    }
-    QScrollBar:vertical {
-        background-color: rgba(20, 20, 40, 150);
-        width: 12px;
-        border-radius: 6px;
-        margin: 0;
-    }
-    QScrollBar::handle:vertical {
-        background-color: rgba(100, 100, 150, 150);
-        border-radius: 6px;
-        min-height: 30px;
-    }
-    QScrollBar::handle:vertical:hover {
-        background-color: rgba(124, 131, 253, 200);
-    }
-    QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-        height: 0px;
-    }
-    """
-    
-    STATUS_BAR = """
-    QStatusBar {
-        background-color: rgba(20, 20, 40, 220);
-        color: #888888;
-        border-top: 1px solid rgba(100, 100, 150, 60);
-        padding: 5px;
-    }
-    """
-    
-    PROGRESS_BAR = """
-    QProgressBar {
-        background-color: rgba(20, 20, 40, 200);
-        border: 1px solid rgba(100, 100, 150, 60);
-        border-radius: 8px;
-        text-align: center;
-        color: white;
-        font-weight: bold;
-    }
-    QProgressBar::chunk {
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-            stop:0 #7c83fd, stop:1 #51cf66);
-        border-radius: 7px;
-    }
-    """
+STYLESHEET = """
+/* Main Window */
+QMainWindow {
+    background-color: #050510;
+}
+
+QWidget {
+    font-family: 'Segoe UI', 'SF Pro Display', -apple-system, Arial, sans-serif;
+    font-size: 13px;
+    color: #e8e8f0;
+}
+
+/* Panels/Cards */
+QFrame#panel {
+    background-color: #171727;
+    border: 1px solid #2a2a40;
+    border-radius: 8px;
+}
+
+QFrame#decisionBadge {
+    background-color: #1a1a2a;
+    border-radius: 16px;
+    border: 2px solid #3a3a50;
+}
+
+/* Input Fields */
+QPlainTextEdit, QTextEdit, QLineEdit {
+    background-color: #0d0d1a;
+    border: 1px solid #2a2a40;
+    border-radius: 8px;
+    padding: 12px;
+    color: #e8e8f0;
+    font-size: 13px;
+    selection-background-color: #7c5cff;
+}
+
+QPlainTextEdit:focus, QTextEdit:focus, QLineEdit:focus {
+    border: 2px solid #7c5cff;
+}
+
+QPlainTextEdit:hover, QTextEdit:hover {
+    border: 1px solid #4a4a6a;
+}
+
+/* Buttons */
+QPushButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #7c5cff, stop:1 #6a4ce6);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+QPushButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #9074ff, stop:1 #7c5cff);
+}
+
+QPushButton:pressed {
+    background: #5a3cd6;
+}
+
+QPushButton:disabled {
+    background: #2a2a3a;
+    color: #5a5a6a;
+}
+
+QPushButton#successBtn {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #2ecc71, stop:1 #27ae60);
+}
+
+QPushButton#successBtn:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #3ddc81, stop:1 #2ecc71);
+}
+
+QPushButton#dangerBtn {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #e74c3c, stop:1 #c0392b);
+}
+
+QPushButton#concernTag {
+    background-color: #2a1a2a;
+    border: 1px solid #e74c3c;
+    color: #e74c3c;
+    border-radius: 12px;
+    padding: 4px 12px;
+    font-size: 11px;
+}
+
+QPushButton#concernTag:hover {
+    background-color: #3a2a3a;
+}
+
+/* ComboBox */
+QComboBox {
+    background-color: #0d0d1a;
+    border: 1px solid #2a2a40;
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #e8e8f0;
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 30px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #171727;
+    selection-background-color: #7c5cff;
+}
+
+/* SpinBox */
+QSpinBox, QDoubleSpinBox {
+    background-color: #0d0d1a;
+    border: 1px solid #2a2a40;
+    border-radius: 8px;
+    padding: 8px;
+    color: #e8e8f0;
+}
+
+/* GroupBox */
+QGroupBox {
+    background-color: #171727;
+    border: 1px solid #2a2a40;
+    border-radius: 8px;
+    margin-top: 16px;
+    padding-top: 16px;
+    font-weight: 600;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 12px;
+    padding: 0 8px;
+    color: #7c5cff;
+}
+
+/* Table */
+QTableWidget {
+    background-color: #0d0d1a;
+    border: 1px solid #2a2a40;
+    border-radius: 8px;
+    gridline-color: #2a2a40;
+}
+
+QTableWidget::item {
+    padding: 8px;
+}
+
+QTableWidget::item:selected {
+    background-color: rgba(124, 92, 255, 0.3);
+}
+
+QHeaderView::section {
+    background-color: #171727;
+    color: #7c5cff;
+    padding: 10px;
+    border: none;
+    border-bottom: 2px solid #7c5cff;
+    font-weight: 600;
+}
+
+/* List Widget */
+QListWidget {
+    background-color: #0d0d1a;
+    border: 1px solid #2a2a40;
+    border-radius: 8px;
+    padding: 4px;
+}
+
+QListWidget::item {
+    padding: 8px 12px;
+    border-radius: 4px;
+}
+
+QListWidget::item:selected {
+    background-color: rgba(124, 92, 255, 0.3);
+}
+
+QListWidget::item:hover {
+    background-color: rgba(124, 92, 255, 0.15);
+}
+
+/* ScrollBar */
+QScrollBar:vertical {
+    background-color: #0d0d1a;
+    width: 10px;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #3a3a5a;
+    border-radius: 5px;
+    min-height: 30px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #7c5cff;
+}
+
+/* ProgressBar */
+QProgressBar {
+    background-color: #0d0d1a;
+    border: 1px solid #2a2a40;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: 600;
+}
+
+QProgressBar::chunk {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 #7c5cff, stop:1 #2ecc71);
+    border-radius: 5px;
+}
+
+/* Tab Widget */
+QTabWidget::pane {
+    border: 1px solid #2a2a40;
+    border-radius: 8px;
+    background-color: transparent;
+}
+
+QTabBar::tab {
+    background-color: #171727;
+    color: #6a6a8a;
+    padding: 12px 24px;
+    margin-right: 2px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    font-weight: 600;
+}
+
+QTabBar::tab:selected {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #7c5cff, stop:1 #6a4ce6);
+    color: white;
+}
+
+QTabBar::tab:hover:!selected {
+    background-color: #2a2a40;
+    color: #8a8aaa;
+}
+
+/* Status Bar */
+QStatusBar {
+    background-color: #0d0d1a;
+    color: #6a6a8a;
+    border-top: 1px solid #2a2a40;
+    padding: 4px 8px;
+}
+
+/* CheckBox */
+QCheckBox {
+    spacing: 8px;
+}
+
+QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 2px solid #3a3a5a;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #7c5cff;
+    border-color: #7c5cff;
+}
+
+/* Splitter */
+QSplitter::handle {
+    background-color: #2a2a40;
+    width: 3px;
+}
+
+QSplitter::handle:hover {
+    background-color: #7c5cff;
+}
+"""
 
 
 # =============================================================================
 # CUSTOM WIDGETS
 # =============================================================================
 
-class ScoreGaugeWidget(QWidget):
-    """A circular gauge widget for displaying scores"""
+class DecisionBadge(QFrame):
+    """Large decision badge widget showing hiring recommendation"""
     
-    def __init__(self, parent=None, size=200):
+    def __init__(self, parent=None):
         super().__init__(parent)
-        self.score = 0
-        self.max_score = 100
-        self.grade = "N/A"
-        self.size = size
-        self.setMinimumSize(size, size)
-        self.setMaximumSize(size, size)
+        self.setObjectName("decisionBadge")
+        self.setMinimumHeight(100)
+        self.setMaximumHeight(130)
         
-        # Animation
-        self.target_score = 0
-        self.animation_timer = QTimer(self)
-        self.animation_timer.timeout.connect(self._animate)
-    
-    def set_score(self, score: int, grade: str = None):
-        """Set score with animation"""
-        self.target_score = score
-        self.grade = grade or self._calculate_grade(score)
-        self.animation_timer.start(20)
-    
-    def _animate(self):
-        """Animate the gauge"""
-        if self.score < self.target_score:
-            self.score = min(self.score + 2, self.target_score)
-            self.update()
-        else:
-            self.animation_timer.stop()
-    
-    def _calculate_grade(self, score: int) -> str:
-        """Calculate grade from score"""
-        if score >= 95: return "A+"
-        elif score >= 90: return "A"
-        elif score >= 85: return "A-"
-        elif score >= 80: return "B+"
-        elif score >= 75: return "B"
-        elif score >= 70: return "B-"
-        elif score >= 65: return "C+"
-        elif score >= 60: return "C"
-        elif score >= 55: return "C-"
-        elif score >= 50: return "D"
-        else: return "F"
-    
-    def _get_color(self, score: int) -> QColor:
-        """Get color based on score"""
-        if score >= 85: return QColor(81, 207, 102)   # Green
-        elif score >= 70: return QColor(124, 131, 253)  # Blue
-        elif score >= 55: return QColor(255, 169, 77)   # Orange
-        else: return QColor(255, 107, 107)   # Red
-    
-    def paintEvent(self, event):
-        """Draw the gauge"""
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        
-        # Center point
-        center_x = self.size // 2
-        center_y = self.size // 2
-        radius = (self.size - 40) // 2
-        
-        # Background arc
-        pen = QPen(QColor(50, 50, 80), 15)
-        pen.setCapStyle(Qt.RoundCap)
-        painter.setPen(pen)
-        painter.drawArc(center_x - radius, center_y - radius, 
-                       radius * 2, radius * 2, 
-                       225 * 16, -270 * 16)
-        
-        # Score arc
-        if self.score > 0:
-            gradient = QLinearGradient(0, 0, self.size, self.size)
-            color = self._get_color(self.score)
-            gradient.setColorAt(0, color)
-            gradient.setColorAt(1, color.lighter(120))
-            
-            pen = QPen(QBrush(gradient), 15)
-            pen.setCapStyle(Qt.RoundCap)
-            painter.setPen(pen)
-            
-            # Calculate arc angle (270 degrees total, starting from 225)
-            span = int((self.score / self.max_score) * 270 * 16)
-            painter.drawArc(center_x - radius, center_y - radius,
-                           radius * 2, radius * 2,
-                           225 * 16, -span)
-        
-        # Center text
-        painter.setPen(Qt.white)
-        
-        # Score
-        font = QFont("Segoe UI", 36, QFont.Bold)
-        painter.setFont(font)
-        painter.drawText(QRect(0, center_y - 40, self.size, 50), 
-                        Qt.AlignCenter, str(self.score))
-        
-        # Grade badge
-        grade_color = self._get_color(self.score)
-        painter.setPen(grade_color)
-        font = QFont("Segoe UI", 24, QFont.Bold)
-        painter.setFont(font)
-        painter.drawText(QRect(0, center_y + 15, self.size, 40),
-                        Qt.AlignCenter, self.grade)
-        
-        # Label
-        painter.setPen(QColor(136, 136, 136))
-        font = QFont("Segoe UI", 10)
-        painter.setFont(font)
-        painter.drawText(QRect(0, center_y + 50, self.size, 25),
-                        Qt.AlignCenter, "HIRING INDEX")
-
-
-class ScoreBarWidget(QWidget):
-    """A horizontal progress bar with label and value"""
-    
-    def __init__(self, label: str, value: int = 0, max_value: int = 100, 
-                 color: QColor = None, parent=None):
-        super().__init__(parent)
-        self.label = label
-        self.value = value
-        self.max_value = max_value
-        self.target_value = value
-        self.color = color or QColor(124, 131, 253)
-        self.setMinimumHeight(35)
-        
-        # Animation
-        self.animation_timer = QTimer(self)
-        self.animation_timer.timeout.connect(self._animate)
-    
-    def set_value(self, value: int):
-        """Set value with animation"""
-        self.target_value = value
-        self.animation_timer.start(15)
-    
-    def _animate(self):
-        """Animate the bar"""
-        if self.value < self.target_value:
-            self.value = min(self.value + 2, self.target_value)
-            self.update()
-        else:
-            self.animation_timer.stop()
-    
-    def paintEvent(self, event):
-        """Draw the bar"""
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        
-        width = self.width()
-        height = self.height()
-        bar_height = 12
-        bar_y = height - bar_height - 5
-        
-        # Label
-        painter.setPen(Qt.white)
-        font = QFont("Segoe UI", 11)
-        painter.setFont(font)
-        painter.drawText(5, bar_y - 5, self.label)
-        
-        # Value
-        painter.setPen(self.color)
-        font = QFont("Segoe UI", 11, QFont.Bold)
-        painter.setFont(font)
-        value_text = f"{self.value}%"
-        painter.drawText(width - painter.fontMetrics().width(value_text) - 5, 
-                        bar_y - 5, value_text)
-        
-        # Background bar
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(QColor(30, 30, 50))
-        painter.drawRoundedRect(0, bar_y, width, bar_height, 6, 6)
-        
-        # Value bar
-        if self.value > 0:
-            bar_width = int((self.value / self.max_value) * width)
-            gradient = QLinearGradient(0, 0, bar_width, 0)
-            gradient.setColorAt(0, self.color)
-            gradient.setColorAt(1, self.color.lighter(120))
-            painter.setBrush(gradient)
-            painter.drawRoundedRect(0, bar_y, bar_width, bar_height, 6, 6)
-
-
-class StatCard(QFrame):
-    """A card widget for displaying statistics"""
-    
-    def __init__(self, title: str, value: str, icon: str, color: QColor, parent=None):
-        super().__init__(parent)
-        self.setObjectName("card")
-        self.setStyleSheet(ModernStyles.CARD)
-        self.setMinimumSize(150, 100)
-        self.setMaximumHeight(120)
+        self._decision = "PENDING"
+        self._score = 0
+        self._grade = "N/A"
+        self._color = QColor("#6a6a8a")
         
         layout = QVBoxLayout(self)
-        layout.setSpacing(5)
+        layout.setContentsMargins(20, 15, 20, 15)
+        layout.setSpacing(8)
         
-        # Icon and title
-        header_layout = QHBoxLayout()
+        # Decision label
+        self.decision_label = QLabel("AWAITING EVALUATION")
+        self.decision_label.setAlignment(Qt.AlignCenter)
+        self.decision_label.setStyleSheet("font-size: 22px; font-weight: bold; color: #6a6a8a;")
+        layout.addWidget(self.decision_label)
         
-        icon_label = QLabel(icon)
-        icon_label.setStyleSheet(f"font-size: 28px;")
-        header_layout.addWidget(icon_label)
+        # Score and grade
+        self.score_label = QLabel("Score: -- | Grade: --")
+        self.score_label.setAlignment(Qt.AlignCenter)
+        self.score_label.setStyleSheet("font-size: 16px; color: #8a8aaa;")
+        layout.addWidget(self.score_label)
+    
+    def set_decision(self, decision: str, score: int, grade: str):
+        """Set the decision with score and grade"""
+        self._decision = decision.upper()
+        self._score = score
+        self._grade = grade
         
-        title_label = QLabel(title)
-        title_label.setStyleSheet(f"color: {color.name()}; font-size: 11px; font-weight: bold;")
-        header_layout.addWidget(title_label)
-        header_layout.addStretch()
+        # Determine color based on decision
+        if decision.upper() in ["STRONG HIRE", "STRONG PASS", "HIRE", "PASS"]:
+            self._color = QColor("#2ecc71")  # Green
+        elif decision.upper() in ["CONSIDER", "BORDERLINE"]:
+            self._color = QColor("#f1c40f")  # Amber
+        else:
+            self._color = QColor("#e74c3c")  # Red
         
-        layout.addLayout(header_layout)
+        self.decision_label.setText(self._decision)
+        self.decision_label.setStyleSheet(f"font-size: 22px; font-weight: bold; color: {self._color.name()};")
+        self.score_label.setText(f"Hiring Index: {score} | Grade: {grade}")
+    
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
         
-        # Value
-        self.value_label = QLabel(value)
-        self.value_label.setStyleSheet("font-size: 28px; font-weight: bold; color: white;")
+        # Draw rounded background with border
+        painter.setPen(QPen(self._color.darker(120), 2))
+        painter.setBrush(QBrush(QColor("#1a1a2a")))
+        painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 16, 16)
+        
+        super().paintEvent(event)
+
+
+class MetricCard(QFrame):
+    """Small metric card for the grid"""
+    
+    def __init__(self, title: str, parent=None):
+        super().__init__(parent)
+        self.setObjectName("panel")
+        self.setMinimumSize(120, 80)
+        self.setMaximumHeight(90)
+        
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(12, 10, 12, 10)
+        layout.setSpacing(4)
+        
+        self.title_label = QLabel(title)
+        self.title_label.setStyleSheet("font-size: 11px; color: #8a8aaa;")
+        layout.addWidget(self.title_label)
+        
+        self.value_label = QLabel("--")
+        self.value_label.setStyleSheet("font-size: 24px; font-weight: bold; color: #e8e8f0;")
         layout.addWidget(self.value_label)
         
-        layout.addStretch()
+        # Progress bar
+        self.bar_widget = QWidget()
+        self.bar_widget.setMinimumHeight(4)
+        self.bar_widget.setMaximumHeight(6)
+        self._bar_value = 0
+        self._bar_color = QColor("#7c5cff")
+        layout.addWidget(self.bar_widget)
     
-    def set_value(self, value: str):
-        """Update the value"""
-        self.value_label.setText(value)
+    def set_value(self, value: int, color: QColor = None):
+        """Set the metric value"""
+        self.value_label.setText(f"{value}%")
+        self._bar_value = value
+        if color:
+            self._bar_color = color
+            self.value_label.setStyleSheet(f"font-size: 24px; font-weight: bold; color: {color.name()};")
+        self.update()
+    
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        
+        # Draw mini progress bar
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        
+        bar_rect = self.bar_widget.geometry()
+        
+        # Background
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QBrush(QColor("#2a2a3a")))
+        painter.drawRoundedRect(bar_rect, 3, 3)
+        
+        # Fill
+        if self._bar_value > 0:
+            fill_width = int(bar_rect.width() * self._bar_value / 100)
+            fill_rect = bar_rect.adjusted(0, 0, -(bar_rect.width() - fill_width), 0)
+            painter.setBrush(QBrush(self._bar_color))
+            painter.drawRoundedRect(fill_rect, 3, 3)
+
+
+class DetailDialog(QDialog):
+    """Dialog showing details for strengths/concerns"""
+    
+    def __init__(self, title: str, details: Dict, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        self.setMinimumSize(500, 400)
+        
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        
+        # Style
+        self.setStyleSheet("""
+            QDialog { background-color: #171727; }
+            QLabel { color: #e8e8f0; }
+            QTextEdit { background-color: #0d0d1a; border: 1px solid #2a2a40; 
+                       border-radius: 8px; padding: 12px; color: #e8e8f0; }
+            QPushButton { background-color: #7c5cff; color: white; border-radius: 8px;
+                         padding: 10px 20px; font-weight: 600; }
+        """)
+        
+        # Description
+        if 'description' in details:
+            desc_label = QLabel(details['description'])
+            desc_label.setWordWrap(True)
+            desc_label.setStyleSheet("font-size: 14px; margin-bottom: 10px;")
+            layout.addWidget(desc_label)
+        
+        # Resume evidence
+        if 'evidence' in details:
+            evidence_group = QGroupBox("Resume Evidence")
+            evidence_group.setStyleSheet("QGroupBox { color: #7c5cff; font-weight: 600; }")
+            evidence_layout = QVBoxLayout(evidence_group)
+            
+            evidence_text = QTextEdit()
+            evidence_text.setReadOnly(True)
+            evidence_text.setPlainText(details['evidence'])
+            evidence_text.setMaximumHeight(120)
+            evidence_layout.addWidget(evidence_text)
+            
+            layout.addWidget(evidence_group)
+        
+        # Rules triggered
+        if 'rules' in details:
+            rules_group = QGroupBox("Rules Triggered")
+            rules_group.setStyleSheet("QGroupBox { color: #7c5cff; font-weight: 600; }")
+            rules_layout = QVBoxLayout(rules_group)
+            
+            rules_text = QTextEdit()
+            rules_text.setReadOnly(True)
+            rules_text.setPlainText(details['rules'])
+            rules_text.setMaximumHeight(100)
+            rules_layout.addWidget(rules_text)
+            
+            layout.addWidget(rules_group)
+        
+        # Close button
+        close_btn = QPushButton("Close")
+        close_btn.clicked.connect(self.accept)
+        layout.addWidget(close_btn, alignment=Qt.AlignRight)
 
 
 # =============================================================================
@@ -528,246 +539,105 @@ class EvaluationWorker(QThread):
             self.finished.emit(result)
         except Exception as e:
             import traceback
-            error_detail = f"{str(e)}\n\nDetails: {traceback.format_exc()}"
-            self.error.emit(error_detail)
+            self.error.emit(f"{str(e)}\n\n{traceback.format_exc()}")
 
 
 # =============================================================================
-# EMAIL CONNECTOR WRAPPER (Real Implementation)
+# CONNECTOR WRAPPERS
 # =============================================================================
 
 class EmailConnectorWrapper:
-    """
-    Wrapper for real IMAP email connector.
-    Provides actual connection to email servers.
-    """
+    """Wrapper for IMAP email connector"""
     
     def __init__(self):
-        self._real_connector = None
+        self._connector = None
         self.connected = False
-        self._last_error = None
     
     def connect(self, host: str, port: int, username: str, password: str, use_ssl: bool = True) -> tuple:
-        """
-        Actually connect to email server using IMAP.
-        
-        Returns:
-            tuple: (success: bool, error_message: str or None)
-        """
         try:
-            self._last_error = None
-            
-            # Create real connector
-            self._real_connector = RealEmailConnector(
-                server=host,
-                port=port,
-                username=username,
-                password=password,
-                use_ssl=use_ssl
+            self._connector = RealEmailConnector(
+                server=host, port=port, username=username,
+                password=password, use_ssl=use_ssl
             )
-            
-            # Actually attempt to connect
-            if self._real_connector.connect():
+            if self._connector.connect():
                 self.connected = True
                 return True, None
-            else:
-                self._last_error = "Connection failed - check credentials"
-                return False, self._last_error
-                
-        except Exception as e:
-            self._last_error = str(e)
-            self.connected = False
-            return False, self._last_error
-    
-    def disconnect(self):
-        """Disconnect from email server"""
-        if self._real_connector:
-            try:
-                self._real_connector.disconnect()
-            except:
-                pass
-        self._real_connector = None
-        self.connected = False
-    
-    def test_connection(self) -> tuple:
-        """
-        Test if connection is still valid.
-        
-        Returns:
-            tuple: (is_connected: bool, error_message: str or None)
-        """
-        if not self._real_connector:
-            return False, "No connection established"
-        
-        try:
-            # Try to list mailboxes as a connection test
-            if self._real_connector._connection:
-                status, _ = self._real_connector._connection.list()
-                if status == 'OK':
-                    return True, None
-            return False, "Connection lost"
+            return False, "Connection failed"
         except Exception as e:
             return False, str(e)
     
+    def disconnect(self):
+        if self._connector:
+            try:
+                self._connector.disconnect()
+            except:
+                pass
+        self._connector = None
+        self.connected = False
+    
     def scan_for_resumes(self, folder: str = "INBOX", days: int = 30) -> List[Dict]:
-        """
-        Actually scan emails for resume attachments.
-        
-        Args:
-            folder: IMAP folder to scan
-            days: Number of days to look back
-            
-        Returns:
-            List of dictionaries with email and resume data
-        """
-        if not self.connected or not self._real_connector:
+        if not self.connected or not self._connector:
             return []
-        
         try:
-            # Calculate since date
             from datetime import timedelta
-            since_date = datetime.utcnow() - timedelta(days=days)
-            
-            # Fetch resume emails from real server
-            messages = self._real_connector.fetch_resumes(
-                limit=100,
-                unseen_only=False,
-                since_date=since_date
-            )
-            
-            # Convert to UI-friendly format
+            since = datetime.utcnow() - timedelta(days=days)
+            messages = self._connector.fetch_resumes(limit=100, unseen_only=False, since_date=since)
             results = []
             for msg in messages:
                 if msg.is_resume:
-                    resume_text = msg.body_text
-                    
-                    # If there are attachments, note them
-                    attachment_name = ""
-                    if msg.attachments:
-                        attachment_name = msg.attachments[0].filename
-                    
                     results.append({
-                        'id': msg.message_id,
-                        'from': msg.sender,
-                        'subject': msg.subject,
-                        'date': msg.received_at.strftime('%Y-%m-%d %H:%M'),
-                        'attachment': attachment_name,
-                        'resume_text': resume_text,
-                        'confidence': msg.confidence
+                        'id': msg.message_id, 'from': msg.sender,
+                        'subject': msg.subject, 'date': msg.received_at.strftime('%Y-%m-%d %H:%M'),
+                        'attachment': msg.attachments[0].filename if msg.attachments else "",
+                        'resume_text': msg.body_text
                     })
-            
             return results
-            
         except Exception as e:
-            logging.error(f"Error scanning emails: {e}")
             return []
 
 
-# =============================================================================
-# ATS CONNECTOR WRAPPER (Real Implementation)
-# =============================================================================
-
 class ATSConnectorWrapper:
-    """
-    Wrapper for real ATS connectors.
-    Provides actual connection to ATS APIs.
-    """
+    """Wrapper for ATS connectors"""
     
     SUPPORTED_SYSTEMS = ['Greenhouse', 'Lever', 'Workable']
     
     def __init__(self):
-        self._real_connector = None
+        self._connector = None
         self.connected = False
-        self.system_type = None
-        self._last_error = None
     
     def connect(self, system_type: str, api_key: str, company_id: str = '') -> tuple:
-        """
-        Actually connect to ATS system using API.
-        
-        Returns:
-            tuple: (success: bool, error_message: str or None)
-        """
         try:
-            self._last_error = None
-            self.system_type = system_type.lower()
-            
-            # Build kwargs for connector
             kwargs = {'api_key': api_key}
             if system_type.lower() == 'workable' and company_id:
                 kwargs['subdomain'] = company_id
-            
-            # Create real connector
-            self._real_connector = get_ats_connector(system_type, **kwargs)
-            
-            # Test connection by fetching jobs
-            try:
-                jobs = self._real_connector.get_jobs()
-                self.connected = True
-                return True, None
-            except Exception as e:
-                self._last_error = f"API test failed: {str(e)}"
-                return False, self._last_error
-                
+            self._connector = get_ats_connector(system_type, **kwargs)
+            self._connector.get_jobs()
+            self.connected = True
+            return True, None
         except Exception as e:
-            self._last_error = str(e)
-            self.connected = False
-            return False, self._last_error
+            return False, str(e)
     
     def disconnect(self):
-        """Disconnect from ATS"""
-        self._real_connector = None
+        self._connector = None
         self.connected = False
     
     def get_jobs(self) -> List[Dict]:
-        """Get all job postings from ATS"""
-        if not self.connected or not self._real_connector:
+        if not self.connected or not self._connector:
             return []
-        
         try:
-            jobs = self._real_connector.get_jobs()
-            return jobs
-        except Exception as e:
-            logging.error(f"Error fetching jobs: {e}")
+            return self._connector.get_jobs()
+        except:
             return []
     
     def get_candidates(self, job_id: str) -> List[Dict]:
-        """Get candidates for a specific job"""
-        if not self.connected or not self._real_connector:
+        if not self.connected or not self._connector:
             return []
-        
         try:
-            candidates = self._real_connector.get_candidates(job_id=job_id)
-            
-            # Convert ATSCandidate objects to dictionaries
-            results = []
-            for cand in candidates:
-                results.append({
-                    'id': cand.candidate_id,
-                    'name': f"{cand.first_name} {cand.last_name}",
-                    'email': cand.email,
-                    'phone': cand.phone,
-                    'status': cand.status,
-                    'stage': cand.stage,
-                    'applied_date': cand.applied_at.strftime('%Y-%m-%d') if cand.applied_at else '',
-                    'resume_url': cand.resume_url,
-                    'resume_text': cand.resume_text,
-                    'job_title': cand.job_title,
-                    'source': cand.source,
-                    'tags': cand.tags
-                })
-            
-            return results
-            
-        except Exception as e:
-            logging.error(f"Error fetching candidates: {e}")
+            candidates = self._connector.get_candidates(job_id=job_id)
+            return [{'id': c.candidate_id, 'name': f"{c.first_name} {c.last_name}",
+                    'email': c.email, 'status': c.status} for c in candidates]
+        except:
             return []
-    
-    def push_evaluation(self, candidate_id: str, score: int, grade: str, notes: str) -> bool:
-        """Push evaluation results back to ATS"""
-        # This would need to be implemented in each connector
-        # For now, return True to indicate acceptance
-        return True
 
 
 # =============================================================================
@@ -775,570 +645,293 @@ class ATSConnectorWrapper:
 # =============================================================================
 
 class MainWindow(QMainWindow):
-    """Main application window with modern UI"""
+    """Main application window with clean 3-panel layout"""
     
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("TrajectIQ Enterprise v3.0 - Intelligence-Driven Hiring")
+        self.setWindowTitle("TrajectIQ Enterprise v3.1")
         self.setMinimumSize(1400, 900)
         
-        # Initialize connectors with REAL implementations
+        # Initialize connectors
         self.email_connector = EmailConnectorWrapper()
         self.ats_connector = ATSConnectorWrapper()
         self.discovered_resumes = []
-        self.evaluation_results = []
         
+        # Apply stylesheet
+        self.setStyleSheet(STYLESHEET)
+        
+        # Setup UI
         self._setup_ui()
         self._create_menus()
-        self._update_status()
+        self._setup_shortcuts()
+        
+        # License check
+        self._check_license()
     
     def _setup_ui(self):
-        """Setup the main UI"""
-        # Apply main stylesheet
-        self.setStyleSheet(ModernStyles.MAIN_WINDOW + ModernStyles.WIDGET)
-        
-        # Central widget
+        """Setup the main UI with 3-panel layout"""
         central = QWidget()
         self.setCentralWidget(central)
-        layout = QVBoxLayout(central)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(20)
+        main_layout = QVBoxLayout(central)
+        main_layout.setContentsMargins(15, 10, 15, 10)
+        main_layout.setSpacing(10)
         
-        # Header
-        header = self._create_header()
-        layout.addWidget(header)
+        # Top bar
+        top_bar = self._create_top_bar()
+        main_layout.addWidget(top_bar)
         
-        # Main tabs
-        self.tabs = QTabWidget()
-        self.tabs.setStyleSheet(ModernStyles.TAB_WIDGET)
+        # Main splitter with 3 panels
+        splitter = QSplitter(Qt.Horizontal)
         
-        # Add tabs
-        self.tabs.addTab(self._create_evaluation_tab(), "📊  Evaluation")
-        self.tabs.addTab(self._create_email_tab(), "📧  Email Integration")
-        self.tabs.addTab(self._create_ats_tab(), "🔗  ATS Integration")
-        self.tabs.addTab(self._create_dashboard_tab(), "📈  Dashboard")
-        self.tabs.addTab(self._create_settings_tab(), "⚙️  Settings")
+        # Left panel - Resume (35%)
+        resume_panel = self._create_resume_panel()
+        splitter.addWidget(resume_panel)
         
-        layout.addWidget(self.tabs)
+        # Middle panel - Job Requirements (35%)
+        job_panel = self._create_job_panel()
+        splitter.addWidget(job_panel)
+        
+        # Right panel - Evaluation Results (30%)
+        results_panel = self._create_results_panel()
+        splitter.addWidget(results_panel)
+        
+        # Set initial sizes (35%, 35%, 30%)
+        total_width = 1400
+        splitter.setSizes([int(total_width * 0.35), int(total_width * 0.35), int(total_width * 0.30)])
+        
+        main_layout.addWidget(splitter, 1)
         
         # Status bar
         self.status_bar = QStatusBar()
-        self.status_bar.setStyleSheet(ModernStyles.STATUS_BAR)
         self.setStatusBar(self.status_bar)
+        self.status_bar.showMessage("Ready")
+        
+        # Progress bar (hidden initially)
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setMaximumHeight(20)
+        self.progress_bar.setVisible(False)
+        self.status_bar.addPermanentWidget(self.progress_bar)
     
-    def _create_header(self) -> QWidget:
-        """Create header widget"""
-        header = QFrame()
-        header.setStyleSheet(ModernStyles.CARD)
-        header.setMaximumHeight(80)
+    def _create_top_bar(self) -> QFrame:
+        """Create top bar with title and action buttons"""
+        bar = QFrame()
+        bar.setObjectName("panel")
+        bar.setMaximumHeight(70)
         
-        layout = QHBoxLayout(header)
+        layout = QHBoxLayout(bar)
+        layout.setContentsMargins(15, 10, 15, 10)
         
-        # Logo and title
+        # Left side - Title and job info
         title_layout = QVBoxLayout()
         
-        title = QLabel("🎯 TrajectIQ Enterprise")
-        title.setStyleSheet("font-size: 24px; font-weight: bold; color: #7c83fd;")
+        title = QLabel("TrajectIQ – Candidate Evaluation")
+        title.setStyleSheet("font-size: 18px; font-weight: bold; color: #7c5cff;")
         title_layout.addWidget(title)
         
-        subtitle = QLabel("Intelligence-Driven Hiring Platform")
-        subtitle.setStyleSheet("font-size: 12px; color: #888888;")
-        title_layout.addWidget(subtitle)
+        self.job_info_label = QLabel("No job selected")
+        self.job_info_label.setStyleSheet("font-size: 12px; color: #6a6a8a;")
+        title_layout.addWidget(self.job_info_label)
         
         layout.addLayout(title_layout)
         layout.addStretch()
         
-        # Version badge
-        version = QLabel("v2.0.0")
-        version.setStyleSheet("""
-            background-color: rgba(124, 131, 253, 100);
-            color: white;
-            padding: 5px 15px;
-            border-radius: 15px;
-            font-weight: bold;
-        """)
-        layout.addWidget(version)
-        
-        return header
-    
-    def _create_evaluation_tab(self) -> QWidget:
-        """Create the main evaluation tab"""
-        widget = QWidget()
-        layout = QVBoxLayout(widget)
-        layout.setSpacing(15)
-        
-        # Top section - Input
-        input_frame = QFrame()
-        input_frame.setStyleSheet(ModernStyles.CARD)
-        input_layout = QHBoxLayout(input_frame)
-        
-        # Resume section
-        resume_section = QVBoxLayout()
-        
-        resume_header = QHBoxLayout()
-        resume_label = QLabel("📄 Resume")
-        resume_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #7c83fd;")
-        resume_header.addWidget(resume_label)
-        resume_header.addStretch()
-        
-        upload_btn = QPushButton("Upload File")
-        upload_btn.setStyleSheet(ModernStyles.BUTTON)
-        upload_btn.clicked.connect(self._upload_resume)
-        resume_header.addWidget(upload_btn)
-        
-        resume_section.addLayout(resume_header)
-        
-        self.resume_input = QTextEdit()
-        self.resume_input.setStyleSheet(ModernStyles.INPUT)
-        self.resume_input.setPlaceholderText("Paste resume content here or upload a file...")
-        self.resume_input.setMinimumHeight(250)
-        resume_section.addWidget(self.resume_input)
-        
-        input_layout.addLayout(resume_section, 1)
-        
-        # Requirements section
-        req_section = QVBoxLayout()
-        
-        req_header = QHBoxLayout()
-        req_label = QLabel("📋 Job Requirements")
-        req_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #7c83fd;")
-        req_header.addWidget(req_label)
-        req_header.addStretch()
-        
-        self.req_format = QComboBox()
-        self.req_format.addItems(["Auto-detect", "Plain Text", "JSON"])
-        self.req_format.setStyleSheet(ModernStyles.INPUT)
-        self.req_format.setFixedWidth(120)
-        self.req_format.currentIndexChanged.connect(self._on_format_changed)
-        req_header.addWidget(self.req_format)
-        
-        req_section.addLayout(req_header)
-        
-        self.requirements_input = QTextEdit()
-        self.requirements_input.setStyleSheet(ModernStyles.INPUT)
-        self.requirements_input.setPlaceholderText(
-            "Paste job description or requirements...\n\n"
-            "Plain text: \"Looking for Python developer with 5+ years experience, AWS, Docker...\"\n\n"
-            "JSON: [{\"name\": \"Python\", \"classification\": \"mission_critical\", \"minimum_years\": 5}]"
-        )
-        self.requirements_input.setMinimumHeight(250)
-        req_section.addWidget(self.requirements_input)
-        
-        input_layout.addLayout(req_section, 1)
-        
-        layout.addWidget(input_frame)
-        
-        # Action buttons
+        # Right side - Action buttons
         btn_layout = QHBoxLayout()
-        btn_layout.addStretch()
+        btn_layout.setSpacing(10)
         
-        self.run_btn = QPushButton("🚀  Run Evaluation")
-        self.run_btn.setStyleSheet(ModernStyles.BUTTON_SUCCESS)
-        self.run_btn.setMinimumWidth(180)
+        self.run_btn = QPushButton("▶ Run Evaluation")
+        self.run_btn.setObjectName("successBtn")
+        self.run_btn.setMinimumWidth(140)
         self.run_btn.clicked.connect(self._run_evaluation)
         btn_layout.addWidget(self.run_btn)
         
-        self.auto_btn = QPushButton("🔄  Auto-Scan & Evaluate")
-        self.auto_btn.setStyleSheet(ModernStyles.BUTTON)
-        self.auto_btn.setMinimumWidth(180)
+        self.auto_btn = QPushButton("⚡ Auto-Scan")
+        self.auto_btn.setMinimumWidth(120)
         self.auto_btn.clicked.connect(self._auto_evaluate)
         btn_layout.addWidget(self.auto_btn)
         
-        btn_layout.addStretch()
         layout.addLayout(btn_layout)
         
-        # Progress
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setStyleSheet(ModernStyles.PROGRESS_BAR)
-        self.progress_bar.setVisible(False)
-        self.progress_bar.setMaximumHeight(25)
-        layout.addWidget(self.progress_bar)
+        return bar
+    
+    def _create_resume_panel(self) -> QFrame:
+        """Create resume input panel"""
+        panel = QFrame()
+        panel.setObjectName("panel")
         
-        # Results section
-        self.results_frame = QFrame()
-        self.results_frame.setStyleSheet(ModernStyles.CARD)
-        results_layout = QVBoxLayout(self.results_frame)
+        layout = QVBoxLayout(panel)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(10)
         
-        results_label = QLabel("📊 Evaluation Results")
-        results_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #7c83fd;")
-        results_layout.addWidget(results_label)
+        # Header with toolbar
+        header = QHBoxLayout()
         
-        # Results content
-        results_content = QHBoxLayout()
+        title = QLabel("📄 Resume")
+        title.setStyleSheet("font-size: 15px; font-weight: bold; color: #7c5cff;")
+        header.addWidget(title)
+        header.addStretch()
         
-        # Left - Gauge and stats
-        left_results = QVBoxLayout()
+        upload_btn = QPushButton("Upload")
+        upload_btn.setMaximumWidth(80)
+        upload_btn.clicked.connect(self._upload_resume)
+        header.addWidget(upload_btn)
         
-        # Gauge
-        gauge_layout = QHBoxLayout()
-        gauge_layout.addStretch()
-        self.score_gauge = ScoreGaugeWidget(size=180)
-        gauge_layout.addWidget(self.score_gauge)
-        gauge_layout.addStretch()
-        left_results.addLayout(gauge_layout)
+        paste_btn = QPushButton("Paste")
+        paste_btn.setMaximumWidth(70)
+        paste_btn.clicked.connect(lambda: self.resume_input.paste())
+        header.addWidget(paste_btn)
         
-        # Stat cards
-        stats_layout = QHBoxLayout()
+        clear_btn = QPushButton("Clear")
+        clear_btn.setMaximumWidth(70)
+        clear_btn.clicked.connect(lambda: self.resume_input.clear())
+        header.addWidget(clear_btn)
         
-        self.stat_tier = StatCard("Tier", "5", "🏆", QColor(255, 169, 77))
-        stats_layout.addWidget(self.stat_tier)
+        layout.addLayout(header)
         
-        self.stat_recommendation = StatCard("Recommendation", "PASS", "📋", QColor(255, 107, 107))
-        stats_layout.addWidget(self.stat_recommendation)
+        # Resume text input
+        self.resume_input = QPlainTextEdit()
+        self.resume_input.setPlaceholderText("Paste resume content here or upload a file...")
+        self.resume_input.setStyleSheet("QPlainTextEdit { font-family: 'Consolas', 'Monaco', monospace; font-size: 12px; }")
+        layout.addWidget(self.resume_input)
         
-        self.stat_skills = StatCard("Skills Match", "0%", "🎯", QColor(124, 131, 253))
-        stats_layout.addWidget(self.stat_skills)
+        return panel
+    
+    def _create_job_panel(self) -> QFrame:
+        """Create job requirements panel"""
+        panel = QFrame()
+        panel.setObjectName("panel")
         
-        left_results.addLayout(stats_layout)
-        results_content.addLayout(left_results, 1)
+        layout = QVBoxLayout(panel)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(10)
         
-        # Right - Score bars
-        right_results = QVBoxLayout()
+        # Header
+        header = QHBoxLayout()
         
-        self.skill_bar = ScoreBarWidget("Skills Score", 0, 100, QColor(124, 131, 253))
-        right_results.addWidget(self.skill_bar)
+        title = QLabel("📋 Job Requirements")
+        title.setStyleSheet("font-size: 15px; font-weight: bold; color: #7c5cff;")
+        header.addWidget(title)
+        header.addStretch()
         
-        self.impact_bar = ScoreBarWidget("Impact Score", 0, 100, QColor(81, 207, 102))
-        right_results.addWidget(self.impact_bar)
+        self.format_combo = QComboBox()
+        self.format_combo.addItems(["Auto", "Plain Text", "JSON"])
+        self.format_combo.setMaximumWidth(100)
+        header.addWidget(self.format_combo)
         
-        self.trajectory_bar = ScoreBarWidget("Trajectory Score", 0, 100, QColor(255, 169, 77))
-        right_results.addWidget(self.trajectory_bar)
+        layout.addLayout(header)
         
-        self.experience_bar = ScoreBarWidget("Experience Score", 0, 100, QColor(255, 107, 107))
-        right_results.addWidget(self.experience_bar)
+        # Requirements text input
+        self.requirements_input = QPlainTextEdit()
+        self.requirements_input.setPlaceholderText(
+            "Paste job description or requirements...\n\n"
+            "Plain text: \"Looking for Python developer with 5+ years, AWS, Docker...\"\n\n"
+            "JSON: [{\"name\": \"Python\", \"classification\": \"mission_critical\", \"minimum_years\": 5}]"
+        )
+        self.requirements_input.setStyleSheet("QPlainTextEdit { font-family: 'Consolas', 'Monaco', monospace; font-size: 12px; }")
+        layout.addWidget(self.requirements_input)
         
-        right_results.addStretch()
-        results_content.addLayout(right_results, 1)
+        # Weights section
+        weights_group = QGroupBox("Evaluation Weights")
+        weights_layout = QGridLayout(weights_group)
         
-        results_layout.addLayout(results_content)
+        weights_layout.addWidget(QLabel("Skills:"), 0, 0)
+        self.weight_skills = QDoubleSpinBox()
+        self.weight_skills.setRange(0, 1)
+        self.weight_skills.setValue(0.3)
+        self.weight_skills.setSingleStep(0.1)
+        weights_layout.addWidget(self.weight_skills, 0, 1)
         
-        # Strengths and concerns
+        weights_layout.addWidget(QLabel("Impact:"), 0, 2)
+        self.weight_impact = QDoubleSpinBox()
+        self.weight_impact.setRange(0, 1)
+        self.weight_impact.setValue(0.25)
+        self.weight_impact.setSingleStep(0.1)
+        weights_layout.addWidget(self.weight_impact, 0, 3)
+        
+        weights_layout.addWidget(QLabel("Trajectory:"), 1, 0)
+        self.weight_trajectory = QDoubleSpinBox()
+        self.weight_trajectory.setRange(0, 1)
+        self.weight_trajectory.setValue(0.2)
+        self.weight_trajectory.setSingleStep(0.1)
+        weights_layout.addWidget(self.weight_trajectory, 1, 1)
+        
+        weights_layout.addWidget(QLabel("Experience:"), 1, 2)
+        self.weight_experience = QDoubleSpinBox()
+        self.weight_experience.setRange(0, 1)
+        self.weight_experience.setValue(0.25)
+        self.weight_experience.setSingleStep(0.1)
+        weights_layout.addWidget(self.weight_experience, 1, 3)
+        
+        layout.addWidget(weights_group)
+        
+        return panel
+    
+    def _create_results_panel(self) -> QFrame:
+        """Create evaluation results panel"""
+        panel = QFrame()
+        panel.setObjectName("panel")
+        
+        layout = QVBoxLayout(panel)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(12)
+        
+        # Header
+        header = QLabel("📊 Evaluation Results")
+        header.setStyleSheet("font-size: 15px; font-weight: bold; color: #7c5cff;")
+        layout.addWidget(header)
+        
+        # Decision badge
+        self.decision_badge = DecisionBadge()
+        layout.addWidget(self.decision_badge)
+        
+        # Metrics grid (2x3)
+        metrics_group = QGroupBox("Key Metrics")
+        metrics_layout = QGridLayout(metrics_group)
+        metrics_layout.setSpacing(10)
+        
+        self.metric_skills = MetricCard("Skills Match")
+        metrics_layout.addWidget(self.metric_skills, 0, 0)
+        
+        self.metric_skill_score = MetricCard("Skills Score")
+        metrics_layout.addWidget(self.metric_skill_score, 0, 1)
+        
+        self.metric_impact = MetricCard("Impact Score")
+        metrics_layout.addWidget(self.metric_impact, 0, 2)
+        
+        self.metric_trajectory = MetricCard("Trajectory")
+        metrics_layout.addWidget(self.metric_trajectory, 1, 0)
+        
+        self.metric_experience = MetricCard("Experience")
+        metrics_layout.addWidget(self.metric_experience, 1, 1)
+        
+        self.metric_overall = MetricCard("Overall Match")
+        metrics_layout.addWidget(self.metric_overall, 1, 2)
+        
+        layout.addWidget(metrics_group)
+        
+        # Strengths and Concerns
         details_layout = QHBoxLayout()
         
         # Strengths
-        strengths_group = QGroupBox("✅ Strengths")
-        strengths_group.setStyleSheet(ModernStyles.GROUP_BOX)
+        strengths_group = QGroupBox("✅ Strengths (Top 5)")
         strengths_layout = QVBoxLayout(strengths_group)
         self.strengths_list = QListWidget()
-        self.strengths_list.setStyleSheet(ModernStyles.INPUT)
+        self.strengths_list.doubleClicked.connect(self._show_strength_detail)
         strengths_layout.addWidget(self.strengths_list)
         details_layout.addWidget(strengths_group)
         
         # Concerns
-        concerns_group = QGroupBox("⚠️ Concerns")
-        concerns_group.setStyleSheet(ModernStyles.GROUP_BOX)
+        concerns_group = QGroupBox("⚠️ Concerns & Gaps")
         concerns_layout = QVBoxLayout(concerns_group)
-        self.concerns_list = QListWidget()
-        self.concerns_list.setStyleSheet(ModernStyles.INPUT)
-        concerns_layout.addWidget(self.concerns_list)
+        self.concerns_widget = QWidget()
+        self.concerns_layout = QFlowLayout(self.concerns_widget)
+        concerns_layout.addWidget(self.concerns_widget)
         details_layout.addWidget(concerns_group)
         
-        results_layout.addLayout(details_layout)
+        layout.addLayout(details_layout, 1)
         
-        layout.addWidget(self.results_frame)
-        
-        return widget
-    
-    def _create_email_tab(self) -> QWidget:
-        """Create email integration tab"""
-        widget = QWidget()
-        layout = QVBoxLayout(widget)
-        layout.setSpacing(15)
-        
-        # Connection settings
-        conn_frame = QFrame()
-        conn_frame.setStyleSheet(ModernStyles.CARD)
-        conn_layout = QFormLayout(conn_frame)
-        
-        self.email_host = QLineEdit()
-        self.email_host.setStyleSheet(ModernStyles.INPUT)
-        self.email_host.setPlaceholderText("imap.gmail.com")
-        conn_layout.addRow("Host:", self.email_host)
-        
-        self.email_port = QSpinBox()
-        self.email_port.setStyleSheet(ModernStyles.INPUT)
-        self.email_port.setRange(1, 65535)
-        self.email_port.setValue(993)
-        conn_layout.addRow("Port:", self.email_port)
-        
-        self.email_user = QLineEdit()
-        self.email_user.setStyleSheet(ModernStyles.INPUT)
-        self.email_user.setPlaceholderText("your@email.com")
-        conn_layout.addRow("Username:", self.email_user)
-        
-        self.email_pass = QLineEdit()
-        self.email_pass.setStyleSheet(ModernStyles.INPUT)
-        self.email_pass.setEchoMode(QLineEdit.Password)
-        conn_layout.addRow("Password:", self.email_pass)
-        
-        self.email_ssl = QCheckBox("Use SSL/TLS")
-        self.email_ssl.setChecked(True)
-        conn_layout.addRow("", self.email_ssl)
-        
-        btn_layout = QHBoxLayout()
-        self.email_connect_btn = QPushButton("Connect")
-        self.email_connect_btn.setStyleSheet(ModernStyles.BUTTON_SUCCESS)
-        self.email_connect_btn.clicked.connect(self._connect_email)
-        btn_layout.addWidget(self.email_connect_btn)
-        
-        self.email_disconnect_btn = QPushButton("Disconnect")
-        self.email_disconnect_btn.setStyleSheet(ModernStyles.BUTTON_DANGER)
-        self.email_disconnect_btn.clicked.connect(self._disconnect_email)
-        self.email_disconnect_btn.setEnabled(False)
-        btn_layout.addWidget(self.email_disconnect_btn)
-        
-        conn_layout.addRow("", btn_layout)
-        
-        layout.addWidget(conn_frame)
-        
-        # Scan settings
-        scan_frame = QFrame()
-        scan_frame.setStyleSheet(ModernStyles.CARD)
-        scan_layout = QHBoxLayout(scan_frame)
-        
-        scan_layout.addWidget(QLabel("Scan last:"))
-        self.email_days = QSpinBox()
-        self.email_days.setStyleSheet(ModernStyles.INPUT)
-        self.email_days.setRange(1, 365)
-        self.email_days.setValue(30)
-        scan_layout.addWidget(self.email_days)
-        scan_layout.addWidget(QLabel("days"))
-        
-        scan_layout.addStretch()
-        
-        self.scan_email_btn = QPushButton("🔍 Scan for Resumes")
-        self.scan_email_btn.setStyleSheet(ModernStyles.BUTTON)
-        self.scan_email_btn.clicked.connect(self._scan_email)
-        self.scan_email_btn.setEnabled(False)
-        scan_layout.addWidget(self.scan_email_btn)
-        
-        layout.addWidget(scan_frame)
-        
-        # Discovered resumes table
-        resumes_frame = QFrame()
-        resumes_frame.setStyleSheet(ModernStyles.CARD)
-        resumes_layout = QVBoxLayout(resumes_frame)
-        
-        resumes_label = QLabel("📧 Discovered Resumes")
-        resumes_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #7c83fd;")
-        resumes_layout.addWidget(resumes_label)
-        
-        self.email_resumes_table = QTableWidget()
-        self.email_resumes_table.setStyleSheet(ModernStyles.TABLE)
-        self.email_resumes_table.setColumnCount(5)
-        self.email_resumes_table.setHorizontalHeaderLabels(["From", "Subject", "Date", "Attachment", "Actions"])
-        self.email_resumes_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        resumes_layout.addWidget(self.email_resumes_table)
-        
-        layout.addWidget(resumes_frame)
-        
-        return widget
-    
-    def _create_ats_tab(self) -> QWidget:
-        """Create ATS integration tab"""
-        widget = QWidget()
-        layout = QVBoxLayout(widget)
-        layout.setSpacing(15)
-        
-        # Connection settings
-        conn_frame = QFrame()
-        conn_frame.setStyleSheet(ModernStyles.CARD)
-        conn_layout = QFormLayout(conn_frame)
-        
-        self.ats_type = QComboBox()
-        self.ats_type.setStyleSheet(ModernStyles.INPUT)
-        self.ats_type.addItems(SUPPORTED_SYSTEMS)
-        conn_layout.addRow("ATS System:", self.ats_type)
-        
-        self.ats_api_key = QLineEdit()
-        self.ats_api_key.setStyleSheet(ModernStyles.INPUT)
-        self.ats_api_key.setPlaceholderText("Enter your API key")
-        self.ats_api_key.setEchoMode(QLineEdit.Password)
-        conn_layout.addRow("API Key:", self.ats_api_key)
-        
-        self.ats_company = QLineEdit()
-        self.ats_company.setStyleSheet(ModernStyles.INPUT)
-        self.ats_company.setPlaceholderText("Company ID (optional)")
-        conn_layout.addRow("Company ID:", self.ats_company)
-        
-        btn_layout = QHBoxLayout()
-        self.ats_connect_btn = QPushButton("Connect")
-        self.ats_connect_btn.setStyleSheet(ModernStyles.BUTTON_SUCCESS)
-        self.ats_connect_btn.clicked.connect(self._connect_ats)
-        btn_layout.addWidget(self.ats_connect_btn)
-        
-        self.ats_disconnect_btn = QPushButton("Disconnect")
-        self.ats_disconnect_btn.setStyleSheet(ModernStyles.BUTTON_DANGER)
-        self.ats_disconnect_btn.clicked.connect(self._disconnect_ats)
-        self.ats_disconnect_btn.setEnabled(False)
-        btn_layout.addWidget(self.ats_disconnect_btn)
-        
-        conn_layout.addRow("", btn_layout)
-        
-        layout.addWidget(conn_frame)
-        
-        # Jobs list
-        jobs_frame = QFrame()
-        jobs_frame.setStyleSheet(ModernStyles.CARD)
-        jobs_layout = QVBoxLayout(jobs_frame)
-        
-        jobs_label = QLabel("📋 Job Postings")
-        jobs_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #7c83fd;")
-        jobs_layout.addWidget(jobs_label)
-        
-        self.ats_jobs_table = QTableWidget()
-        self.ats_jobs_table.setStyleSheet(ModernStyles.TABLE)
-        self.ats_jobs_table.setColumnCount(4)
-        self.ats_jobs_table.setHorizontalHeaderLabels(["Job Title", "Department", "Candidates", "Actions"])
-        self.ats_jobs_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        jobs_layout.addWidget(self.ats_jobs_table)
-        
-        layout.addWidget(jobs_frame)
-        
-        # Candidates list
-        candidates_frame = QFrame()
-        candidates_frame.setStyleSheet(ModernStyles.CARD)
-        candidates_layout = QVBoxLayout(candidates_frame)
-        
-        candidates_label = QLabel("👥 Candidates")
-        candidates_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #7c83fd;")
-        candidates_layout.addWidget(candidates_label)
-        
-        self.ats_candidates_table = QTableWidget()
-        self.ats_candidates_table.setStyleSheet(ModernStyles.TABLE)
-        self.ats_candidates_table.setColumnCount(5)
-        self.ats_candidates_table.setHorizontalHeaderLabels(["Name", "Email", "Status", "Applied", "Actions"])
-        self.ats_candidates_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        candidates_layout.addWidget(self.ats_candidates_table)
-        
-        layout.addWidget(candidates_frame)
-        
-        return widget
-    
-    def _create_dashboard_tab(self) -> QWidget:
-        """Create dashboard tab with analytics"""
-        widget = QWidget()
-        layout = QVBoxLayout(widget)
-        layout.setSpacing(15)
-        
-        # Stats row
-        stats_frame = QFrame()
-        stats_frame.setStyleSheet(ModernStyles.CARD)
-        stats_layout = QHBoxLayout(stats_frame)
-        
-        self.dash_total = StatCard("Total Evaluations", "0", "📊", QColor(124, 131, 253))
-        stats_layout.addWidget(self.dash_total)
-        
-        self.dash_avg_score = StatCard("Average Score", "0", "📈", QColor(81, 207, 102))
-        stats_layout.addWidget(self.dash_avg_score)
-        
-        self.dash_hired = StatCard("Strong Hires", "0", "✅", QColor(255, 169, 77))
-        stats_layout.addWidget(self.dash_hired)
-        
-        self.dash_pending = StatCard("Pending Review", "0", "⏳", QColor(255, 107, 107))
-        stats_layout.addWidget(self.dash_pending)
-        
-        layout.addWidget(stats_frame)
-        
-        # Results table
-        results_frame = QFrame()
-        results_frame.setStyleSheet(ModernStyles.CARD)
-        results_layout = QVBoxLayout(results_frame)
-        
-        results_label = QLabel("📊 Evaluation History")
-        results_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #7c83fd;")
-        results_layout.addWidget(results_label)
-        
-        self.dash_table = QTableWidget()
-        self.dash_table.setStyleSheet(ModernStyles.TABLE)
-        self.dash_table.setColumnCount(7)
-        self.dash_table.setHorizontalHeaderLabels([
-            "Candidate", "Email", "Score", "Grade", "Recommendation", "Date", "Actions"
-        ])
-        self.dash_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        results_layout.addWidget(self.dash_table)
-        
-        # Export button
-        export_layout = QHBoxLayout()
-        export_layout.addStretch()
-        
-        export_btn = QPushButton("📥 Export to Excel")
-        export_btn.setStyleSheet(ModernStyles.BUTTON)
-        export_btn.clicked.connect(self._export_results)
-        export_layout.addWidget(export_btn)
-        
-        results_layout.addLayout(export_layout)
-        
-        layout.addWidget(results_frame)
-        
-        return widget
-    
-    def _create_settings_tab(self) -> QWidget:
-        """Create settings tab"""
-        widget = QWidget()
-        layout = QVBoxLayout(widget)
-        layout.setSpacing(15)
-        
-        # License info
-        license_frame = QFrame()
-        license_frame.setStyleSheet(ModernStyles.CARD)
-        license_layout = QFormLayout(license_frame)
-        
-        lm = get_license_manager()
-        info = lm.get_license_info()
-        
-        if info:
-            license_layout.addRow("Organization:", QLabel(info.organization_name))
-            license_layout.addRow("License ID:", QLabel(info.license_id))
-            license_layout.addRow("Max Users:", QLabel(str(info.max_users)))
-            license_layout.addRow("AI Enabled:", QLabel("Yes" if info.ai_enabled else "No"))
-            license_layout.addRow("ATS Enabled:", QLabel("Yes" if info.ats_enabled else "No"))
-            if info.expiration_date:
-                license_layout.addRow("Expires:", QLabel(info.expiration_date.strftime("%Y-%m-%d")))
-        else:
-            license_layout.addRow("Status:", QLabel("Demo Mode"))
-        
-        layout.addWidget(license_frame)
-        
-        # Scoring weights
-        weights_frame = QFrame()
-        weights_frame.setStyleSheet(ModernStyles.CARD)
-        weights_layout = QFormLayout(weights_frame)
-        
-        self.weight_skills = QDoubleSpinBox()
-        self.weight_skills.setStyleSheet(ModernStyles.INPUT)
-        self.weight_skills.setRange(0.0, 1.0)
-        self.weight_skills.setValue(0.35)
-        self.weight_skills.setSingleStep(0.05)
-        weights_layout.addRow("Skills Weight:", self.weight_skills)
-        
-        self.weight_impact = QDoubleSpinBox()
-        self.weight_impact.setStyleSheet(ModernStyles.INPUT)
-        self.weight_impact.setRange(0.0, 1.0)
-        self.weight_impact.setValue(0.25)
-        self.weight_impact.setSingleStep(0.05)
-        weights_layout.addRow("Impact Weight:", self.weight_impact)
-        
-        self.weight_trajectory = QDoubleSpinBox()
-        self.weight_trajectory.setStyleSheet(ModernStyles.INPUT)
-        self.weight_trajectory.setRange(0.0, 1.0)
-        self.weight_trajectory.setValue(0.25)
-        self.weight_trajectory.setSingleStep(0.05)
-        weights_layout.addRow("Trajectory Weight:", self.weight_trajectory)
-        
-        self.weight_experience = QDoubleSpinBox()
-        self.weight_experience.setStyleSheet(ModernStyles.INPUT)
-        self.weight_experience.setRange(0.0, 1.0)
-        self.weight_experience.setValue(0.15)
-        self.weight_experience.setSingleStep(0.05)
-        weights_layout.addRow("Experience Weight:", self.weight_experience)
-        
-        layout.addWidget(weights_frame)
-        
-        layout.addStretch()
-        
-        return widget
+        return panel
     
     def _create_menus(self):
         """Create menu bar"""
@@ -1347,542 +940,315 @@ class MainWindow(QMainWindow):
         # File menu
         file_menu = menubar.addMenu("File")
         
-        export_action = QAction("Export Results", self)
-        export_action.setShortcut("Ctrl+E")
-        export_action.triggered.connect(self._export_results)
-        file_menu.addAction(export_action)
+        upload_action = QAction("Upload Resume", self)
+        upload_action.setShortcut("Ctrl+O")
+        upload_action.triggered.connect(self._upload_resume)
+        file_menu.addAction(upload_action)
         
         file_menu.addSeparator()
         
         exit_action = QAction("Exit", self)
-        exit_action.setShortcut("Alt+F4")
+        exit_action.setShortcut("Ctrl+Q")
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
+        
+        # Evaluation menu
+        eval_menu = menubar.addMenu("Evaluation")
+        
+        run_action = QAction("Run Evaluation", self)
+        run_action.setShortcut("Ctrl+R")
+        run_action.triggered.connect(self._run_evaluation)
+        eval_menu.addAction(run_action)
+        
+        re_eval_action = QAction("Re-evaluate", self)
+        re_eval_action.setShortcut("F5")
+        re_eval_action.triggered.connect(self._run_evaluation)
+        eval_menu.addAction(re_eval_action)
         
         # Help menu
         help_menu = menubar.addMenu("Help")
         
-        about_action = QAction("About TrajectIQ", self)
+        about_action = QAction("About", self)
         about_action.triggered.connect(self._show_about)
         help_menu.addAction(about_action)
     
-    def _update_status(self):
-        """Update status bar"""
-        self.status_bar.showMessage("Ready - TrajectIQ Enterprise v2.0")
+    def _setup_shortcuts(self):
+        """Setup keyboard shortcuts"""
+        QShortcut(QKeySequence("Ctrl+R"), self, self._run_evaluation)
+        QShortcut(QKeySequence("F5"), self, self._run_evaluation)
+        QShortcut(QKeySequence("Ctrl+O"), self, self._upload_resume)
     
-    # =========================================================================
-    # EVENT HANDLERS
-    # =========================================================================
+    def _check_license(self):
+        """Check license status"""
+        try:
+            license_manager = get_license_manager()
+            status = license_manager.validate_license()
+            if not status.is_valid:
+                self.status_bar.showMessage(f"License: {status.message}")
+        except:
+            self.status_bar.showMessage("Demo Mode")
     
-    def _on_format_changed(self, index):
-        """Update placeholder based on format selection"""
-        format_type = self.req_format.currentText()
-        if format_type == "Plain Text":
-            self.requirements_input.setPlaceholderText(
-                "Paste job description here...\n\n"
-                "Example:\n"
-                "\"We are looking for a Senior Python Developer with 5+ years of experience. "
-                "Required skills: Python, Django, AWS. Nice to have: React.\""
-            )
-        elif format_type == "JSON":
-            self.requirements_input.setPlaceholderText(
-                '[\n  {\n    "name": "Python",\n    "classification": "mission_critical",\n    "minimum_years": 5,\n    "is_critical": true\n  }\n]'
-            )
-        else:
-            self.requirements_input.setPlaceholderText(
-                "Paste job description or JSON requirements...\n"
-                "Auto-detect will parse either format."
-            )
-    
-    def _parse_requirements(self, text: str) -> list:
-        """Parse requirements from text or JSON"""
-        text = text.strip()
-        if not text:
-            return []
-        
-        format_type = self.req_format.currentText()
-        
-        # Try JSON first
-        if format_type in ["JSON", "Auto-detect"]:
-            if text.startswith('[') or text.startswith('{'):
-                try:
-                    reqs = json.loads(text)
-                    if isinstance(reqs, dict):
-                        reqs = [reqs]
-                    return reqs
-                except:
-                    pass
-        
-        # Parse as plain text
-        return self._extract_skills_from_text(text)
-    
-    def _extract_skills_from_text(self, text: str) -> list:
-        """Extract skills from plain text"""
-        tech_skills = [
-            "python", "java", "javascript", "typescript", "c++", "c#", "go", "rust",
-            "react", "angular", "vue", "node.js", "nodejs", "django", "flask", "fastapi",
-            "aws", "azure", "gcp", "docker", "kubernetes", "jenkins", "git",
-            "sql", "mysql", "postgresql", "mongodb", "redis", "elasticsearch",
-            "machine learning", "ml", "deep learning", "tensorflow", "pytorch",
-            "api", "rest", "graphql", "microservices", "ci/cd", "devops"
-        ]
-        
-        text_lower = text.lower()
-        requirements = []
-        found_skills = set()
-        
-        # Extract years
-        min_years = 0
-        match = re.search(r'(\d+)\+?\s*years?', text_lower)
-        if match:
-            min_years = int(match.group(1))
-        
-        # Find skills
-        for skill in tech_skills:
-            if skill in text_lower and skill not in found_skills:
-                found_skills.add(skill)
-                
-                classification = "core"
-                if any(kw in text_lower for kw in ["required", "must have", "mandatory"]):
-                    classification = "mission_critical"
-                elif any(kw in text_lower for kw in ["nice to have", "preferred", "plus"]):
-                    classification = "optional"
-                
-                requirements.append({
-                    "name": skill.title(),
-                    "classification": classification,
-                    "minimum_years": min_years,
-                    "is_critical": classification == "mission_critical"
-                })
-        
-        return requirements if requirements else [{"name": "General", "classification": "core", "minimum_years": 0}]
+    # -------------------------------------------------------------------------
+    # Actions
+    # -------------------------------------------------------------------------
     
     def _upload_resume(self):
-        """Upload resume from file"""
+        """Upload resume file"""
         file_path, _ = QFileDialog.getOpenFileName(
             self, "Open Resume", "",
             "Documents (*.pdf *.docx *.doc *.txt);;All Files (*)"
         )
         if file_path:
             try:
-                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                    content = f.read()
-                self.resume_input.setText(content)
+                if file_path.endswith('.txt'):
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        self.resume_input.setPlainText(f.read())
+                elif file_path.endswith('.pdf'):
+                    import PyPDF2
+                    with open(file_path, 'rb') as f:
+                        reader = PyPDF2.PdfReader(f)
+                        text = '\n'.join(page.extract_text() for page in reader.pages)
+                        self.resume_input.setPlainText(text)
+                elif file_path.endswith(('.docx', '.doc')):
+                    from docx import Document
+                    doc = Document(file_path)
+                    text = '\n'.join(p.text for p in doc.paragraphs)
+                    self.resume_input.setPlainText(text)
+                
+                self.status_bar.showMessage(f"Loaded: {Path(file_path).name}")
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to read file: {str(e)}")
+                QMessageBox.warning(self, "Error", f"Failed to load file: {e}")
     
     def _run_evaluation(self):
-        """Run evaluation"""
+        """Run the evaluation"""
         resume_text = self.resume_input.toPlainText().strip()
-        requirements_text = self.requirements_input.toPlainText().strip()
+        req_text = self.requirements_input.toPlainText().strip()
         
         if not resume_text:
-            QMessageBox.warning(self, "Error", "Please enter resume content")
+            QMessageBox.warning(self, "Missing Input", "Please enter resume content.")
             return
         
-        job_requirements = self._parse_requirements(requirements_text)
+        if not req_text:
+            QMessageBox.warning(self, "Missing Input", "Please enter job requirements.")
+            return
         
+        # Parse requirements
+        requirements = self._parse_requirements(req_text)
+        
+        # Get weights
+        weights = {
+            'skills': self.weight_skills.value(),
+            'impact': self.weight_impact.value(),
+            'trajectory': self.weight_trajectory.value(),
+            'experience': self.weight_experience.value()
+        }
+        
+        # Disable buttons
         self.run_btn.setEnabled(False)
-        self.progress_bar.setVisible(True)
-        self.progress_bar.setRange(0, 0)
-        self.status_bar.showMessage(f"Found {len(job_requirements)} skills in requirements. Evaluating...")
+        self.auto_btn.setEnabled(False)
         
-        self.worker = EvaluationWorker(resume_text, job_requirements, {})
-        self.worker.progress.connect(lambda msg: self.status_bar.showMessage(msg))
+        # Show progress
+        self.progress_bar.setVisible(True)
+        self.progress_bar.setRange(0, 0)  # Indeterminate
+        self.status_bar.showMessage("Evaluating resume vs job requirements...")
+        
+        # Start worker
+        self.worker = EvaluationWorker(resume_text, requirements, weights)
+        self.worker.progress.connect(self._on_progress)
         self.worker.finished.connect(self._on_evaluation_finished)
         self.worker.error.connect(self._on_evaluation_error)
         self.worker.start()
     
+    def _parse_requirements(self, text: str) -> list:
+        """Parse requirements from text"""
+        text = text.strip()
+        
+        # Try JSON
+        if text.startswith('['):
+            try:
+                return json.loads(text)
+            except:
+                pass
+        
+        # Plain text - convert to structured format
+        requirements = []
+        lines = text.split('\n')
+        for line in lines:
+            line = line.strip()
+            if line and len(line) > 3:
+                requirements.append({
+                    'name': line,
+                    'classification': 'important',
+                    'minimum_years': None
+                })
+        
+        return requirements
+    
+    def _on_progress(self, message: str):
+        """Handle progress update"""
+        self.status_bar.showMessage(message)
+    
     def _on_evaluation_finished(self, result: dict):
         """Handle evaluation completion"""
-        self.run_btn.setEnabled(True)
         self.progress_bar.setVisible(False)
+        self.run_btn.setEnabled(True)
+        self.auto_btn.setEnabled(True)
+        self.status_bar.showMessage("Evaluation complete")
         
-        try:
-            final = result.get("final_scoring", {}).get("hiring_index", {})
-            score = final.get('overall_score', 0) if final else 0
-            grade = final.get('grade', 'N/A') if final else 'N/A'
-            tier = result.get("final_scoring", {}).get("tier", 5)
-            recommendation = final.get('recommendation', 'pass') if final else 'pass'
-            
-            # Update gauge
-            self.score_gauge.set_score(score, grade)
-            
-            # Update stat cards
-            self.stat_tier.value_label.setText(str(tier))
-            self.stat_recommendation.value_label.setText(recommendation.replace('_', ' ').title())
-            self.stat_skills.value_label.setText(f"{score}%")
-            
-            # Update bars
-            comp = result.get("final_scoring", {}).get("component_scores", {})
-            self.skill_bar.set_value(comp.get('skill', 0))
-            self.impact_bar.set_value(comp.get('impact', 0))
-            self.trajectory_bar.set_value(comp.get('trajectory', 0))
-            self.experience_bar.set_value(comp.get('experience', 0))
-            
-            # Update strengths and concerns
-            self.strengths_list.clear()
-            for s in final.get('key_strengths', []):
-                self.strengths_list.addItem(f"✓ {s}")
-            
-            self.concerns_list.clear()
-            for c in final.get('key_concerns', []):
-                self.concerns_list.addItem(f"⚠ {c}")
-            
-            # Store result
-            self.evaluation_results.append({
-                'name': result.get('resume_parse', {}).get('contact_info', {}).get('name', 'Unknown'),
-                'email': result.get('resume_parse', {}).get('contact_info', {}).get('email', ''),
-                'score': score,
-                'grade': grade,
-                'recommendation': recommendation,
-                'date': datetime.now().strftime('%Y-%m-%d %H:%M'),
-                'result': result
-            })
-            
-            # Update dashboard
-            self._update_dashboard()
-            
-            self.status_bar.showMessage("Evaluation complete!")
-            
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to display results: {str(e)}")
-            self.status_bar.showMessage("Evaluation completed with errors")
+        # Update UI with results
+        self._update_results(result)
     
     def _on_evaluation_error(self, error: str):
         """Handle evaluation error"""
-        self.run_btn.setEnabled(True)
         self.progress_bar.setVisible(False)
-        QMessageBox.critical(self, "Evaluation Error", error)
+        self.run_btn.setEnabled(True)
+        self.auto_btn.setEnabled(True)
         self.status_bar.showMessage("Evaluation failed")
+        
+        QMessageBox.critical(self, "Evaluation Error", f"An error occurred:\n\n{error[:500]}")
+    
+    def _update_results(self, result: dict):
+        """Update results panel with evaluation data"""
+        # Extract scores
+        scores = result.get('scores', {})
+        overall = scores.get('overall', 0)
+        grade = scores.get('grade', 'N/A')
+        
+        # Determine decision
+        if overall >= 85:
+            decision = "STRONG HIRE"
+        elif overall >= 70:
+            decision = "HIRE"
+        elif overall >= 55:
+            decision = "CONSIDER"
+        else:
+            decision = "REJECT"
+        
+        # Update decision badge
+        self.decision_badge.set_decision(decision, overall, grade)
+        
+        # Update metrics
+        green = QColor("#2ecc71")
+        amber = QColor("#f1c40f")
+        blue = QColor("#7c5cff")
+        red = QColor("#e74c3c")
+        
+        def get_color(val):
+            if val >= 80: return green
+            if val >= 60: return blue
+            if val >= 40: return amber
+            return red
+        
+        self.metric_skills.set_value(scores.get('skills_match', 0), get_color(scores.get('skills_match', 0)))
+        self.metric_skill_score.set_value(scores.get('skills', 0), get_color(scores.get('skills', 0)))
+        self.metric_impact.set_value(scores.get('impact', 0), get_color(scores.get('impact', 0)))
+        self.metric_trajectory.set_value(scores.get('trajectory', 0), get_color(scores.get('trajectory', 0)))
+        self.metric_experience.set_value(scores.get('experience', 0), get_color(scores.get('experience', 0)))
+        self.metric_overall.set_value(overall, get_color(overall))
+        
+        # Update strengths
+        self.strengths_list.clear()
+        strengths = result.get('strengths', [])
+        for s in strengths[:5]:
+            item = QListWidgetItem(f"• {s.get('name', str(s))}")
+            item.setData(Qt.UserRole, s)
+            self.strengths_list.addItem(item)
+        
+        # Update concerns
+        self._clear_layout(self.concerns_layout)
+        concerns = result.get('concerns', [])
+        for c in concerns[:6]:
+            btn = QPushButton(f"⚠ {c.get('name', str(c))}")
+            btn.setObjectName("concernTag")
+            btn.clicked.connect(lambda checked, concern=c: self._show_concern_detail(concern))
+            self.concerns_layout.addWidget(btn)
+    
+    def _clear_layout(self, layout):
+        """Clear all widgets from layout"""
+        while layout.count():
+            item = layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+    
+    def _show_strength_detail(self, index):
+        """Show detail dialog for strength"""
+        item = self.strengths_list.item(index.row())
+        if item:
+            data = item.data(Qt.UserRole)
+            if isinstance(data, dict):
+                dialog = DetailDialog("Strength Detail", data, self)
+                dialog.exec_()
+    
+    def _show_concern_detail(self, concern: dict):
+        """Show detail dialog for concern"""
+        dialog = DetailDialog("Concern Detail", concern, self)
+        dialog.exec_()
     
     def _auto_evaluate(self):
-        """Auto-evaluate from discovered resumes"""
-        if not self.discovered_resumes:
-            QMessageBox.information(self, "Info", "No discovered resumes. Please scan email or ATS first.")
-            return
-        
-        requirements_text = self.requirements_input.toPlainText().strip()
-        job_requirements = self._parse_requirements(requirements_text)
-        
-        self.progress_bar.setVisible(True)
-        self.progress_bar.setRange(0, len(self.discovered_resumes))
-        self.status_bar.showMessage("Auto-evaluating discovered resumes...")
-        
-        for i, resume in enumerate(self.discovered_resumes):
-            self.progress_bar.setValue(i)
-            QApplication.processEvents()
-            
-            # Evaluate
-            try:
-                result = run_full_evaluation(resume.get('resume_text', ''), job_requirements, {})
-                final = result.get("final_scoring", {}).get("hiring_index", {})
-                
-                self.evaluation_results.append({
-                    'name': resume.get('name', resume.get('from', 'Unknown')),
-                    'email': resume.get('email', ''),
-                    'score': final.get('overall_score', 0),
-                    'grade': final.get('grade', 'N/A'),
-                    'recommendation': final.get('recommendation', 'pass'),
-                    'date': datetime.now().strftime('%Y-%m-%d %H:%M'),
-                    'result': result
-                })
-            except Exception as e:
-                print(f"Error evaluating {resume.get('name', 'Unknown')}: {e}")
-        
-        self.progress_bar.setVisible(False)
-        self._update_dashboard()
-        self.tabs.setCurrentIndex(3)  # Switch to dashboard
-        
-        QMessageBox.information(self, "Complete", f"Evaluated {len(self.discovered_resumes)} resumes!")
-    
-    def _connect_email(self):
-        """Connect to email server with proper validation"""
-        host = self.email_host.text().strip()
-        port = self.email_port.value()
-        user = self.email_user.text().strip()
-        password = self.email_pass.text()
-        use_ssl = self.email_ssl.isChecked()
-        
-        # Validate inputs
-        if not host:
-            QMessageBox.warning(self, "Missing Information", "Please enter the email server host (e.g., imap.gmail.com)")
-            return
-        if not user:
-            QMessageBox.warning(self, "Missing Information", "Please enter your email username/address")
-            return
-        if not password:
-            QMessageBox.warning(self, "Missing Information", "Please enter your password")
-            return
-        
-        # Show connecting status
-        self.status_bar.showMessage("Connecting to email server...")
-        QApplication.processEvents()
-        
-        # Actually attempt connection
-        success, error = self.email_connector.connect(host, port, user, password, use_ssl)
-        
-        if success:
-            self.email_connect_btn.setEnabled(False)
-            self.email_disconnect_btn.setEnabled(True)
-            self.scan_email_btn.setEnabled(True)
-            self.status_bar.showMessage(f"Connected to {host} as {user}")
-            QMessageBox.information(self, "Connection Successful", 
-                f"Successfully connected to {host}\n\nYou can now scan for resumes.")
-        else:
-            error_msg = error or "Unknown error occurred"
-            self.status_bar.showMessage("Connection failed")
-            QMessageBox.critical(self, "Connection Failed", 
-                f"Could not connect to email server.\n\nError: {error_msg}\n\n"
-                "Please check:\n"
-                "• Server address and port are correct\n"
-                "• Username and password are correct\n"
-                "• For Gmail, use an App Password (not your regular password)\n"
-                "• SSL/TLS is enabled for secure servers")
-    
-    def _disconnect_email(self):
-        """Disconnect from email"""
-        self.email_connector.disconnect()
-        self.email_connect_btn.setEnabled(True)
-        self.email_disconnect_btn.setEnabled(False)
-        self.scan_email_btn.setEnabled(False)
-        self.status_bar.showMessage("Disconnected from email server")
-    
-    def _scan_email(self):
-        """Scan email for resumes with proper error handling"""
-        if not self.email_connector.connected:
-            QMessageBox.warning(self, "Not Connected", 
-                "Please connect to your email server first before scanning.")
-            return
-        
-        days = self.email_days.value()
-        self.status_bar.showMessage(f"Scanning emails from the last {days} days...")
-        self.progress_bar.setVisible(True)
-        self.progress_bar.setRange(0, 0)  # Indeterminate progress
-        QApplication.processEvents()
-        
-        try:
-            resumes = self.email_connector.scan_for_resumes(days=days)
-            
-            self.progress_bar.setVisible(False)
-            
-            if not resumes:
-                self.status_bar.showMessage("No resume emails found")
-                QMessageBox.information(self, "Scan Complete", 
-                    f"No emails with resumes were found in the last {days} days.\n\n"
-                    "Tips:\n"
-                    "• Make sure there are emails with resume attachments\n"
-                    "• Check the email folder being scanned (default: INBOX)\n"
-                    "• Try increasing the number of days to scan")
-                return
-            
-            self.discovered_resumes.extend(resumes)
-            
-            # Update table
-            self.email_resumes_table.setRowCount(len(resumes))
-            for i, r in enumerate(resumes):
-                self.email_resumes_table.setItem(i, 0, QTableWidgetItem(r.get('from', '')))
-                self.email_resumes_table.setItem(i, 1, QTableWidgetItem(r.get('subject', '')))
-                self.email_resumes_table.setItem(i, 2, QTableWidgetItem(r.get('date', '')))
-                self.email_resumes_table.setItem(i, 3, QTableWidgetItem(r.get('attachment', '')))
-                
-                # Actions
-                eval_btn = QPushButton("Evaluate")
-                eval_btn.setStyleSheet(ModernStyles.BUTTON)
-                eval_btn.clicked.connect(lambda checked, r=r: self._evaluate_single(r))
-                self.email_resumes_table.setCellWidget(i, 4, eval_btn)
-            
-            self.status_bar.showMessage(f"Found {len(resumes)} resume(s)")
-            
-        except Exception as e:
-            self.progress_bar.setVisible(False)
-            self.status_bar.showMessage("Scan failed")
-            QMessageBox.critical(self, "Scan Error", 
-                f"An error occurred while scanning emails:\n\n{str(e)}")
-    
-    def _connect_ats(self):
-        """Connect to ATS with proper validation"""
-        system = self.ats_type.currentText()
-        api_key = self.ats_api_key.text().strip()
-        company = self.ats_company.text().strip()
-        
-        if not api_key:
-            QMessageBox.warning(self, "Missing Information", 
-                "Please enter your ATS API key")
-            return
-        
-        # Show connecting status
-        self.status_bar.showMessage(f"Connecting to {system}...")
-        QApplication.processEvents()
-        
-        # Actually attempt connection
-        success, error = self.ats_connector.connect(system, api_key, company)
-        
-        if success:
-            self.ats_connect_btn.setEnabled(False)
-            self.ats_disconnect_btn.setEnabled(True)
-            self.status_bar.showMessage(f"Connected to {system}")
-            
-            # Load jobs
-            self._load_ats_jobs()
-            
-            QMessageBox.information(self, "Connection Successful", 
-                f"Successfully connected to {system}.\n\nJobs have been loaded.")
-        else:
-            error_msg = error or "Unknown error occurred"
-            self.status_bar.showMessage("Connection failed")
-            QMessageBox.critical(self, "Connection Failed", 
-                f"Could not connect to {system}.\n\nError: {error_msg}\n\n"
-                "Please check:\n"
-                "• API key is correct and has not expired\n"
-                "• API key has the necessary permissions\n"
-                "• Company ID/subdomain is correct (if required)")
-    
-    def _disconnect_ats(self):
-        """Disconnect from ATS"""
-        self.ats_connector.disconnect()
-        self.ats_connect_btn.setEnabled(True)
-        self.ats_disconnect_btn.setEnabled(False)
-        self.status_bar.showMessage("Disconnected from ATS")
-    
-    def _load_ats_jobs(self):
-        """Load jobs from ATS"""
-        jobs = self.ats_connector.get_jobs()
-        
-        self.ats_jobs_table.setRowCount(len(jobs))
-        for i, job in enumerate(jobs):
-            self.ats_jobs_table.setItem(i, 0, QTableWidgetItem(job.get('title', '')))
-            self.ats_jobs_table.setItem(i, 1, QTableWidgetItem(job.get('department', '')))
-            self.ats_jobs_table.setItem(i, 2, QTableWidgetItem(str(job.get('candidates', 0))))
-            
-            load_btn = QPushButton("Load Candidates")
-            load_btn.setStyleSheet(ModernStyles.BUTTON)
-            load_btn.clicked.connect(lambda checked, jid=job.get('id'): self._load_ats_candidates(jid))
-            self.ats_jobs_table.setCellWidget(i, 3, load_btn)
-    
-    def _load_ats_candidates(self, job_id: str):
-        """Load candidates for a job"""
-        candidates = self.ats_connector.get_candidates(job_id)
-        
-        self.ats_candidates_table.setRowCount(len(candidates))
-        for i, cand in enumerate(candidates):
-            self.ats_candidates_table.setItem(i, 0, QTableWidgetItem(cand.get('name', '')))
-            self.ats_candidates_table.setItem(i, 1, QTableWidgetItem(cand.get('email', '')))
-            self.ats_candidates_table.setItem(i, 2, QTableWidgetItem(cand.get('status', '')))
-            self.ats_candidates_table.setItem(i, 3, QTableWidgetItem(cand.get('applied_date', '')))
-            
-            eval_btn = QPushButton("Evaluate")
-            eval_btn.setStyleSheet(ModernStyles.BUTTON)
-            eval_btn.clicked.connect(lambda checked, c=cand: self._evaluate_single(c))
-            self.ats_candidates_table.setCellWidget(i, 4, eval_btn)
-    
-    def _evaluate_single(self, item: dict):
-        """Evaluate a single resume"""
-        self.resume_input.setText(item.get('resume_text', ''))
-        self._run_evaluation()
-    
-    def _update_dashboard(self):
-        """Update dashboard statistics"""
-        total = len(self.evaluation_results)
-        if total == 0:
-            return
-        
-        avg_score = sum(r['score'] for r in self.evaluation_results) / total
-        hired = sum(1 for r in self.evaluation_results if r['score'] >= 70)
-        pending = sum(1 for r in self.evaluation_results if r['score'] < 50)
-        
-        self.dash_total.set_value(str(total))
-        self.dash_avg_score.set_value(f"{avg_score:.0f}")
-        self.dash_hired.set_value(str(hired))
-        self.dash_pending.set_value(str(pending))
-        
-        # Update table
-        self.dash_table.setRowCount(total)
-        for i, r in enumerate(self.evaluation_results):
-            self.dash_table.setItem(i, 0, QTableWidgetItem(r['name']))
-            self.dash_table.setItem(i, 1, QTableWidgetItem(r['email']))
-            self.dash_table.setItem(i, 2, QTableWidgetItem(str(r['score'])))
-            self.dash_table.setItem(i, 3, QTableWidgetItem(r['grade']))
-            self.dash_table.setItem(i, 4, QTableWidgetItem(r['recommendation']))
-            self.dash_table.setItem(i, 5, QTableWidgetItem(r['date']))
-            
-            view_btn = QPushButton("View")
-            view_btn.setStyleSheet(ModernStyles.BUTTON)
-            view_btn.clicked.connect(lambda checked, r=r: self._view_result(r))
-            self.dash_table.setCellWidget(i, 6, view_btn)
-    
-    def _view_result(self, result: dict):
-        """View detailed result"""
-        self._on_evaluation_finished(result.get('result', {}))
-        self.tabs.setCurrentIndex(0)  # Switch to evaluation tab
-    
-    def _export_results(self):
-        """Export results to Excel"""
-        if not self.evaluation_results:
-            QMessageBox.information(self, "Info", "No results to export")
-            return
-        
-        file_path, _ = QFileDialog.getSaveFileName(
-            self, "Export Results", "trajectiq_results.csv",
-            "CSV Files (*.csv);;All Files (*)"
-        )
-        
-        if file_path:
-            try:
-                with open(file_path, 'w', encoding='utf-8') as f:
-                    f.write("Name,Email,Score,Grade,Recommendation,Date\n")
-                    for r in self.evaluation_results:
-                        f.write(f"{r['name']},{r['email']},{r['score']},{r['grade']},{r['recommendation']},{r['date']}\n")
-                
-                QMessageBox.information(self, "Success", f"Results exported to {file_path}")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to export: {str(e)}")
+        """Auto-scan and evaluate from connected sources"""
+        QMessageBox.information(self, "Auto-Scan", "Auto-scan feature requires email or ATS connection.\n\nPlease configure integrations in Settings tab.")
     
     def _show_about(self):
         """Show about dialog"""
-        QMessageBox.about(
-            self,
-            "About TrajectIQ Enterprise",
-            """<h2>🎯 TrajectIQ Enterprise</h2>
-            <p>Version 2.0.0</p>
-            <p><b>Intelligence-Driven Hiring Platform</b></p>
-            <p>Deterministic • Explainable • Auditable</p>
-            <hr>
-            <p><b>Features:</b></p>
-            <ul>
-                <li>AI-powered resume evaluation</li>
-                <li>Email integration for resume discovery</li>
-                <li>ATS integration (Greenhouse, Lever, Workday)</li>
-                <li>Graphical analytics dashboard</li>
-            </ul>
-            <hr>
-            <p>© 2024 TrajectIQ. All rights reserved.</p>"""
+        QMessageBox.about(self, "About TrajectIQ",
+            "<h2>TrajectIQ Enterprise v3.1</h2>"
+            "<p>Intelligence-Driven Hiring Platform</p>"
+            "<p>Features:</p>"
+            "<ul>"
+            "<li>Deterministic candidate scoring</li>"
+            "<li>Real-time collaboration</li>"
+            "<li>Advanced analytics & reporting</li>"
+            "<li>Email & ATS integrations</li>"
+            "</ul>"
+            "<p>License: TRAJECTIQ-DEMO-2024-FULL-ACCESS</p>"
         )
 
 
 # =============================================================================
-# APPLICATION ENTRY POINT
+# FLOW LAYOUT (for concern tags)
 # =============================================================================
 
-def run_application():
-    """Run the TrajectIQ desktop application"""
+class QFlowLayout(QWidget):
+    """Simple flow layout using grid"""
     
-    # High DPI support
-    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-    QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._layout = QGridLayout(self)
+        self._layout.setSpacing(6)
+        self._layout.setContentsMargins(4, 4, 4, 4)
+        self._items = []
     
+    def addWidget(self, widget):
+        col = len(self._items) % 2
+        row = len(self._items) // 2
+        self._layout.addWidget(widget, row, col)
+        self._items.append(widget)
+    
+    def clear(self):
+        for item in self._items:
+            item.deleteLater()
+        self._items.clear()
+
+
+# =============================================================================
+# ENTRY POINT
+# =============================================================================
+
+def main():
     app = QApplication(sys.argv)
-    app.setStyle("Fusion")
+    app.setStyle('Fusion')
     
-    # Check license
-    lm = get_license_manager()
-    status, _ = lm.validate_license()
+    # Set dark palette
+    palette = QPalette()
+    palette.setColor(QPalette.Window, QColor(5, 5, 16))
+    palette.setColor(QPalette.WindowText, QColor(232, 232, 240))
+    palette.setColor(QPalette.Base, QColor(13, 13, 26))
+    palette.setColor(QPalette.Text, QColor(232, 232, 240))
+    palette.setColor(QPalette.Button, QColor(23, 23, 39))
+    palette.setColor(QPalette.ButtonText, QColor(232, 232, 240))
+    palette.setColor(QPalette.Highlight, QColor(124, 92, 255))
+    app.setPalette(palette)
     
-    if status != LicenseStatus.VALID:
-        # Show activation dialog inline
-        pass  # Demo mode
-    
-    # Show main window
     window = MainWindow()
     window.show()
     
@@ -1890,4 +1256,4 @@ def run_application():
 
 
 if __name__ == "__main__":
-    run_application()
+    main()
