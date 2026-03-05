@@ -781,12 +781,18 @@ class MainWindow(QMainWindow):
         layout = QHBoxLayout(header)
         
         # Load and display logo
-        logo_path = Path(__file__).parent.parent.parent / "assets" / "logo.png"
-        if logo_path.exists():
+        assets_dir = Path(__file__).parent.parent.parent / "assets"
+        logo_path = assets_dir / "trajectiq_logo.png"
+        icon_path = assets_dir / "trajectiq_icon.png"
+        
+        # Try to load the logo
+        logo_file = logo_path if logo_path.exists() else icon_path
+        
+        if logo_file.exists():
             logo_label = QLabel()
-            pixmap = QPixmap(str(logo_path))
-            # Scale logo to fit header height
-            scaled_pixmap = pixmap.scaledToHeight(60, Qt.SmoothTransformation)
+            pixmap = QPixmap(str(logo_file))
+            # Scale logo to fit header height while maintaining aspect ratio
+            scaled_pixmap = pixmap.scaledToHeight(55, Qt.SmoothTransformation)
             logo_label.setPixmap(scaled_pixmap)
             layout.addWidget(logo_label)
         else:
@@ -810,7 +816,7 @@ class MainWindow(QMainWindow):
         layout.addStretch()
         
         # Version badge
-        version = QLabel("v4.0.0")
+        version = QLabel("v4.0.1")
         version.setStyleSheet("""
             background-color: rgba(124, 131, 253, 100);
             color: white;
@@ -1766,6 +1772,17 @@ def run_application():
     
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
+    
+    # Set application icon
+    assets_dir = Path(__file__).parent.parent.parent / "assets"
+    icon_path = assets_dir / "trajectiq_icon.png"
+    ico_path = assets_dir / "trajectiq_icon.ico"
+    
+    # Try to load icon (prefer ICO on Windows)
+    if ico_path.exists():
+        app.setWindowIcon(QIcon(str(ico_path)))
+    elif icon_path.exists():
+        app.setWindowIcon(QIcon(str(icon_path)))
     
     # Check license
     lm = get_license_manager()
