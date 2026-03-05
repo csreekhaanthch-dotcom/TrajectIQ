@@ -6,23 +6,26 @@
 cryptography>=41.0.0
 bcrypt>=4.0.0
 argon2-cffi>=23.1.0
-pyjwt>=2.8.0
+PyJWT>=2.8.0
 
 # Database (encrypted)
-pysqlcipher3>=1.2.0; sys_platform == 'linux'
-# sqlcipher3 is installed separately on Windows
+# pysqlcipher3>=1.2.0; sys_platform == 'linux'
 
 # HTTP (for cloud license validation and ATS connectors)
 requests>=2.31.0
 aiohttp>=3.9.0
 certifi>=2024.2.0
+urllib3>=2.0.0
 
 # Desktop GUI
 PyQt5>=5.15.0
+PyQt5-Qt5>=5.15.0
+PyQt5-sip>=12.12.0
 
 # Resume parsing
 PyPDF2>=3.0.0
 python-docx>=0.8.11
+lxml>=4.9.0
 
 # JSON Schema validation
 jsonschema>=4.20.0
@@ -37,15 +40,26 @@ setuptools>=68.0.0
 # Testing
 pytest>=7.0.0
 pytest-cov>=4.0.0
-pytest-asyncio>=0.23.0
+pytest-asyncio>=0.21.0
 pytest-timeout>=2.2.0
-hypothesis>=6.92.0  # For fuzz testing
+pytest-benchmark>=4.0.0
+hypothesis>=6.92.0
 
 # Code quality
 flake8>=7.0.0
 black>=24.1.0
+isort>=5.13.0
 mypy>=1.8.0
-bandit>=1.7.0  # SAST
+bandit>=1.7.0
+
+# Security scanning
+safety>=2.3.0
 
 # Type stubs
 types-requests>=2.31.0
+
+# Websockets for collaboration
+websockets>=12.0
+
+# Additional dependencies
+typing-extensions>=4.9.0
