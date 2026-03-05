@@ -80,9 +80,11 @@ def build_executable():
     for imp in hidden_imports:
         cmd.extend(["--hidden-import", imp])
     
-    # Add data files
+    # Add data files - use correct separator for platform
+    import platform
+    separator = ';' if platform.system() == 'Windows' else ':'
     if Path("assets").exists():
-        cmd.extend(["--add-data", "assets;assets"])
+        cmd.extend([f"--add-data", f"assets{separator}assets"])
     
     # Main entry point
     cmd.append("src/main.py")

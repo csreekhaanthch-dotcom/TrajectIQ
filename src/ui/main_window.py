@@ -27,7 +27,7 @@ from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal, QDate, QRect, QPointF,
 from PyQt5.QtGui import (
     QFont, QIcon, QColor, QPalette, QStandardItemModel, QStandardItem,
     QPainter, QPen, QBrush, QLinearGradient, QRadialGradient, QPainterPath,
-    QFontMetrics
+    QFontMetrics, QPixmap
 )
 
 # Add parent to path
@@ -725,7 +725,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("TrajectIQ Enterprise v2.0 - Intelligence-Driven Hiring")
+        self.setWindowTitle("TrajectIQ Enterprise v4.0.0 - Intelligence-Driven Hiring")
         self.setMinimumSize(1400, 900)
         
         # Initialize connectors
@@ -780,10 +780,25 @@ class MainWindow(QMainWindow):
         
         layout = QHBoxLayout(header)
         
-        # Logo and title
+        # Load and display logo
+        logo_path = Path(__file__).parent.parent.parent / "assets" / "logo.png"
+        if logo_path.exists():
+            logo_label = QLabel()
+            pixmap = QPixmap(str(logo_path))
+            # Scale logo to fit header height
+            scaled_pixmap = pixmap.scaledToHeight(60, Qt.SmoothTransformation)
+            logo_label.setPixmap(scaled_pixmap)
+            layout.addWidget(logo_label)
+        else:
+            # Fallback to text logo
+            logo_label = QLabel("🎯")
+            logo_label.setStyleSheet("font-size: 32px;")
+            layout.addWidget(logo_label)
+        
+        # Title and subtitle
         title_layout = QVBoxLayout()
         
-        title = QLabel("🎯 TrajectIQ Enterprise")
+        title = QLabel("TrajectIQ Enterprise")
         title.setStyleSheet("font-size: 24px; font-weight: bold; color: #7c83fd;")
         title_layout.addWidget(title)
         
@@ -795,7 +810,7 @@ class MainWindow(QMainWindow):
         layout.addStretch()
         
         # Version badge
-        version = QLabel("v2.0.0")
+        version = QLabel("v4.0.0")
         version.setStyleSheet("""
             background-color: rgba(124, 131, 253, 100);
             color: white;
@@ -1313,7 +1328,7 @@ class MainWindow(QMainWindow):
     
     def _update_status(self):
         """Update status bar"""
-        self.status_bar.showMessage("Ready - TrajectIQ Enterprise v2.0")
+        self.status_bar.showMessage("Ready - TrajectIQ Enterprise v4.0.0 | License: TRAJECTIQ-DEMO-2024-FULL-ACCESS")
     
     # =========================================================================
     # EVENT HANDLERS
