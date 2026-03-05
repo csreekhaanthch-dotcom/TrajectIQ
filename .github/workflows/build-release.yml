@@ -1,0 +1,132 @@
+name: Build Release Executables
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v3.1.1)'
+        required: true
+        default: 'v3.1.1'
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller PyQt5 cryptography bcrypt PyPDF2 python-docx lxml requests
+
+      - name: Install system dependencies for PyQt5
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxcb-xkb1 libxcb-xinerama0 libxcb-render-util0 libxkbcommon-x11-0 libxcb-image0 libxcb-icccm4 libxcb-keysyms1
+
+      - name: Build executable
+        run: python build.py --clean
+
+      - name: Rename Linux executable
+        run: mv dist/TrajectIQ dist/TrajectIQ-Linux-x64
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrajectIQ-Linux
+          path: dist/TrajectIQ-Linux-x64
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller PyQt5 cryptography bcrypt PyPDF2 python-docx lxml requests
+
+      - name: Build executable
+        run: python build.py --clean
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrajectIQ-Windows
+          path: dist/TrajectIQ.exe
+
+  create-release:
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: TrajectIQ-Linux
+          path: dist/
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: TrajectIQ-Windows
+          path: dist/
+
+      - name: Get version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.get_version.outputs.VERSION }}
+          name: TrajectIQ ${{ steps.get_version.outputs.VERSION }}
+          body: |
+            ## TrajectIQ ${{ steps.get_version.outputs.VERSION }}
+
+            ### Downloads
+            - **Windows**: TrajectIQ.exe - Double-click to run
+            - **Linux**: TrajectIQ-Linux-x64 - Make executable with `chmod +x TrajectIQ-Linux-x64`
+
+            ### Demo License
+            `TRAJECTIQ-DEMO-2024-FULL-ACCESS`
+
+            ### Features
+            - Resume parsing with AI detection
+            - Multi-dimensional candidate scoring
+            - ATS integration (Greenhouse, Lever, Workable)
+            - Bias detection and mitigation
+            - Enterprise security (AES-256, JWT, RBAC)
+            - Real-time collaboration
+            - Advanced analytics and reporting
+
+            ### System Requirements
+            - Windows 10/11 (64-bit) or Linux x64
+            - 4GB RAM minimum
+            - 100MB disk space
+          files: |
+            dist/TrajectIQ.exe
+            dist/TrajectIQ-Linux-x64
+          draft: false
+          prerelease: false
