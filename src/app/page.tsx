@@ -92,20 +92,23 @@ const mockScoreDistribution: ScoreDistribution[] = [
   { grade: 'F', count: 6, percentage: 4 },
 ];
 
+// Use static dates to avoid hydration mismatch (server vs client)
+const STATIC_NOW = '2024-01-15T10:00:00.000Z';
+
 const mockRecentCandidates: RecentCandidate[] = [
-  { id: '1', firstName: 'John', lastName: 'Smith', currentTitle: 'Senior Engineer', createdAt: new Date().toISOString(), status: 'NEW' },
-  { id: '2', firstName: 'Jane', lastName: 'Doe', currentTitle: 'Full Stack Developer', createdAt: new Date(Date.now() - 3600000).toISOString(), status: 'SCREENING' },
-  { id: '3', firstName: 'Mike', lastName: 'Johnson', currentTitle: 'Python Developer', createdAt: new Date(Date.now() - 7200000).toISOString(), status: 'NEW' },
-  { id: '4', firstName: 'Sarah', lastName: 'Williams', currentTitle: 'Tech Lead', createdAt: new Date(Date.now() - 10800000).toISOString(), status: 'INTERVIEWED' },
-  { id: '5', firstName: 'Alex', lastName: 'Brown', currentTitle: 'Backend Developer', createdAt: new Date(Date.now() - 14400000).toISOString(), status: 'NEW' },
+  { id: '1', firstName: 'John', lastName: 'Smith', currentTitle: 'Senior Engineer', createdAt: STATIC_NOW, status: 'NEW' },
+  { id: '2', firstName: 'Jane', lastName: 'Doe', currentTitle: 'Full Stack Developer', createdAt: '2024-01-15T09:00:00.000Z', status: 'SCREENING' },
+  { id: '3', firstName: 'Mike', lastName: 'Johnson', currentTitle: 'Python Developer', createdAt: '2024-01-15T08:00:00.000Z', status: 'NEW' },
+  { id: '4', firstName: 'Sarah', lastName: 'Williams', currentTitle: 'Tech Lead', createdAt: '2024-01-15T07:00:00.000Z', status: 'INTERVIEWED' },
+  { id: '5', firstName: 'Alex', lastName: 'Brown', currentTitle: 'Backend Developer', createdAt: '2024-01-15T06:00:00.000Z', status: 'NEW' },
 ];
 
 const mockRecentRequirements: RecentRequirement[] = [
-  { id: '1', title: 'Senior Software Engineer', status: 'ACTIVE', createdAt: new Date().toISOString(), _count: { candidates: 24 } },
-  { id: '2', title: 'Full Stack Developer', status: 'ACTIVE', createdAt: new Date(Date.now() - 86400000).toISOString(), _count: { candidates: 18 } },
-  { id: '3', title: 'Python Developer', status: 'ACTIVE', createdAt: new Date(Date.now() - 172800000).toISOString(), _count: { candidates: 12 } },
-  { id: '4', title: 'Frontend Engineer', status: 'PAUSED', createdAt: new Date(Date.now() - 259200000).toISOString(), _count: { candidates: 8 } },
-  { id: '5', title: 'DevOps Engineer', status: 'CLOSED', createdAt: new Date(Date.now() - 345600000).toISOString(), _count: { candidates: 15 } },
+  { id: '1', title: 'Senior Software Engineer', status: 'ACTIVE', createdAt: STATIC_NOW, _count: { candidates: 24 } },
+  { id: '2', title: 'Full Stack Developer', status: 'ACTIVE', createdAt: '2024-01-14T10:00:00.000Z', _count: { candidates: 18 } },
+  { id: '3', title: 'Python Developer', status: 'ACTIVE', createdAt: '2024-01-13T10:00:00.000Z', _count: { candidates: 12 } },
+  { id: '4', title: 'Frontend Engineer', status: 'PAUSED', createdAt: '2024-01-12T10:00:00.000Z', _count: { candidates: 8 } },
+  { id: '5', title: 'DevOps Engineer', status: 'CLOSED', createdAt: '2024-01-11T10:00:00.000Z', _count: { candidates: 15 } },
 ];
 
 // ============================================
