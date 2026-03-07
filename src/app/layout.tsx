@@ -8,6 +8,10 @@ export const metadata: Metadata = {
   title: 'TrajectIQ - Hiring Intelligence Platform',
   description: 'AI-powered email-driven hiring intelligence SaaS platform for deterministic candidate evaluation',
   keywords: ['hiring', 'recruitment', 'AI', 'resume parsing', 'candidate scoring', 'ATS'],
+  icons: {
+    icon: '/favicon.png',
+    apple: '/favicon.png',
+  },
 };
 
 export default function RootLayout({
