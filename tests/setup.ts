@@ -6,7 +6,7 @@
 process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing';
 process.env.ENCRYPTION_KEY = 'test-encryption-key-32-bytes!';
 process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
-process.env.NODE_ENV = 'test';
+// Note: NODE_ENV is read-only and set by the build system
 
 // Mock Next.js cookies
 jest.mock('next/headers', () => ({
@@ -18,37 +18,7 @@ jest.mock('next/headers', () => ({
 }));
 
 // Global test utilities
-declare global {
-  var testUtils: {
-    mockUser: {
-      id: string;
-      email: string;
-      firstName: string;
-      lastName: string;
-      role: string;
-      organizationId: string;
-    };
-    mockRequirement: {
-      id: string;
-      title: string;
-      requiredSkills: string[];
-      preferredSkills: string[];
-      experienceRequired: number;
-    };
-    mockResume: {
-      skills: string[];
-      technologies: string[];
-      experience: number;
-      companies: string[];
-      projects: string[];
-      education: Array<{ institution: string; degree: string; field: string; year: number }>;
-      summary: string;
-      rawText: string;
-    };
-  };
-}
-
-global.testUtils = {
+export const testUtils = {
   mockUser: {
     id: 'test-user-id',
     email: 'test@example.com',
@@ -77,6 +47,9 @@ global.testUtils = {
     rawText: 'Senior Full Stack Developer with 7 years of experience building scalable web applications.',
   },
 };
+
+// Make testUtils available globally
+(global as unknown as { testUtils: typeof testUtils }).testUtils = testUtils;
 
 // Console suppression for cleaner test output
 const originalError = console.error;

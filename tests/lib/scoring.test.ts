@@ -10,6 +10,7 @@ import { calculateIAE } from '@/lib/scoring/iae';
 import { calculateCTA } from '@/lib/scoring/cta';
 import { calculateERR } from '@/lib/scoring/err';
 import { calculateHiringScore, rankCandidates } from '@/lib/scoring/index';
+import { DEFAULT_WEIGHTS } from '@/lib/scoring/types';
 
 // Test data
 const mockSkills = [
@@ -85,10 +86,12 @@ const mockScoringInput = {
   education: mockEducation,
   projects: mockProjects,
   summary: 'Senior Full Stack Developer with 7 years of experience',
+  rawText: 'Senior Full Stack Developer with 7 years of experience building scalable web applications.',
   requiredSkills: mockRequiredSkills,
   preferredSkills: [{ name: 'Docker', required: false, weight: 5, category: 'tool' as const }],
   experienceRequired: 5,
   experiencePreferred: 7,
+  weights: DEFAULT_WEIGHTS,
 };
 
 describe('Scoring Engine', () => {
@@ -237,26 +240,35 @@ describe('Scoring Engine', () => {
         {
           title: 'Junior Developer',
           company: 'Company A',
+          location: 'San Francisco, CA',
           startDate: '2015-01',
           endDate: '2017-01',
           achievements: [],
           current: false,
+          description: 'Junior developer role',
+          technologies: ['JavaScript'],
         },
         {
           title: 'Senior Developer',
           company: 'Company A',
+          location: 'San Francisco, CA',
           startDate: '2017-01',
           endDate: '2020-01',
           achievements: ['Promoted'],
           current: false,
+          description: 'Senior developer role',
+          technologies: ['JavaScript', 'TypeScript', 'React'],
         },
         {
           title: 'Engineering Manager',
           company: 'Company B',
+          location: 'San Francisco, CA',
           startDate: '2020-01',
           endDate: null,
           achievements: [],
           current: true,
+          description: 'Engineering manager role',
+          technologies: ['TypeScript', 'React', 'Node.js'],
         },
       ];
 
@@ -271,10 +283,13 @@ describe('Scoring Engine', () => {
       const hoppingExperience = Array(8).fill(null).map((_, i) => ({
         title: 'Software Engineer',
         company: `Company ${i}`,
+        location: 'City',
         startDate: `2017-0${i + 1}`,
         endDate: i < 7 ? `2017-0${i + 2}` : null,
         achievements: [],
         current: i === 7,
+        description: 'Software engineer role',
+        technologies: ['JavaScript'],
       }));
 
       const result = calculateCTA(hoppingExperience, mockEducation);
@@ -304,10 +319,13 @@ describe('Scoring Engine', () => {
         {
           title: 'Marketing Specialist',
           company: 'Ad Agency',
+          location: 'New York, NY',
           startDate: '2015-01',
           endDate: null,
           achievements: [],
           current: true,
+          description: 'Marketing role',
+          technologies: [],
         },
       ];
 
@@ -379,6 +397,10 @@ describe('Scoring Engine', () => {
         summary: '',
         rawText: '',
         requiredSkills: mockRequiredSkills,
+        preferredSkills: [],
+        experienceRequired: 5,
+        experiencePreferred: 7,
+        weights: DEFAULT_WEIGHTS,
       };
 
       const result = await calculateHiringScore(minimalInput);
