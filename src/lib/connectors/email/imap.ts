@@ -3,7 +3,16 @@
 // ============================================
 // Real IMAP implementation for email connectivity
 
-import type { EmailConnector, EmailConnectionConfig, EmailMessage, EmailThread } from './types';
+import type { EmailProvider, EmailProtocol } from '@/types';
+import type { 
+  EmailConnector, 
+  EmailConnectionConfig, 
+  EmailMessage, 
+  EmailThread,
+  EmailAttachment,
+  ListMessagesOptions,
+  SearchQuery 
+} from './types';
 
 export interface IMAPConfig extends EmailConnectionConfig {
   host: string;
@@ -70,6 +79,19 @@ export class IMAPConnector implements EmailConnector {
     }
   }
 
+  // Required interface methods
+  getProvider(): EmailProvider {
+    return this.config.provider;
+  }
+
+  getProtocol(): EmailProtocol {
+    return this.config.protocol;
+  }
+
+  getEmail(): string {
+    return this.config.email;
+  }
+
   async listFolders(): Promise<string[]> {
     if (!this.connected) {
       throw new Error('Not connected to email server');
@@ -79,33 +101,17 @@ export class IMAPConnector implements EmailConnector {
     return ['INBOX', 'Sent', 'Drafts', 'Spam', 'Trash'];
   }
 
-  async selectFolder(folder: string): Promise<{ total: number; unseen: number }> {
+  async listMessages(options?: ListMessagesOptions): Promise<EmailMessage[]> {
     if (!this.connected) {
       throw new Error('Not connected to email server');
     }
     
-    // Simulate folder selection
-    return { total: 0, unseen: 0 };
-  }
-
-  async searchMessages(options?: {
-    folder?: string;
-    since?: Date;
-    hasAttachment?: boolean;
-    from?: string;
-    to?: string;
-    subject?: string;
-  }): Promise<EmailMessage[]> {
-    if (!this.connected) {
-      throw new Error('Not connected to email server');
-    }
-    
-    // In production, this would search real IMAP messages
+    // In production, this would list real IMAP messages
     // For serverless, use API-based email services
     return [];
   }
 
-  async fetchMessage(messageId: string): Promise<EmailMessage | null> {
+  async fetchMessage(id: string): Promise<EmailMessage | null> {
     if (!this.connected) {
       throw new Error('Not connected to email server');
     }
@@ -121,6 +127,52 @@ export class IMAPConnector implements EmailConnector {
     
     // In production, fetch real thread
     return null;
+  }
+
+  async searchMessages(query: SearchQuery): Promise<EmailMessage[]> {
+    if (!this.connected) {
+      throw new Error('Not connected to email server');
+    }
+    
+    // In production, this would search real IMAP messages
+    return [];
+  }
+
+  async findReplies(messageId: string): Promise<EmailMessage[]> {
+    if (!this.connected) {
+      throw new Error('Not connected to email server');
+    }
+    
+    // In production, find replies to a specific message
+    return [];
+  }
+
+  async findRepliesToThread(threadId: string): Promise<EmailMessage[]> {
+    if (!this.connected) {
+      throw new Error('Not connected to email server');
+    }
+    
+    // In production, find all replies in a thread
+    return [];
+  }
+
+  async fetchAttachment(messageId: string, attachmentId: string): Promise<EmailAttachment | null> {
+    if (!this.connected) {
+      throw new Error('Not connected to email server');
+    }
+    
+    // In production, fetch attachment content
+    return null;
+  }
+
+  // Additional helper methods
+  async selectFolder(folder: string): Promise<{ total: number; unseen: number }> {
+    if (!this.connected) {
+      throw new Error('Not connected to email server');
+    }
+    
+    // Simulate folder selection
+    return { total: 0, unseen: 0 };
   }
 
   async moveMessage(messageId: string, destination: string): Promise<boolean> {

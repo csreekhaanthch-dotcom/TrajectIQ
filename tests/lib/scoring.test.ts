@@ -13,18 +13,18 @@ import { calculateHiringScore, rankCandidates } from '@/lib/scoring/index';
 
 // Test data
 const mockSkills = [
-  { name: 'TypeScript', level: 'expert', yearsOfExperience: 5, lastUsed: '2024-01-01' },
-  { name: 'React', level: 'expert', yearsOfExperience: 6, lastUsed: '2024-01-01' },
-  { name: 'Node.js', level: 'advanced', yearsOfExperience: 5, lastUsed: '2024-01-01' },
-  { name: 'PostgreSQL', level: 'advanced', yearsOfExperience: 4, lastUsed: '2024-01-01' },
-  { name: 'AWS', level: 'intermediate', yearsOfExperience: 3, lastUsed: '2024-01-01' },
+  { name: 'TypeScript', level: 'expert' as const, yearsOfExperience: 5, lastUsed: '2024-01-01' },
+  { name: 'React', level: 'expert' as const, yearsOfExperience: 6, lastUsed: '2024-01-01' },
+  { name: 'Node.js', level: 'advanced' as const, yearsOfExperience: 5, lastUsed: '2024-01-01' },
+  { name: 'PostgreSQL', level: 'advanced' as const, yearsOfExperience: 4, lastUsed: '2024-01-01' },
+  { name: 'AWS', level: 'intermediate' as const, yearsOfExperience: 3, lastUsed: '2024-01-01' },
 ];
 
 const mockRequiredSkills = [
-  { name: 'TypeScript', required: true, weight: 10, category: 'technical' },
-  { name: 'React', required: true, weight: 10, category: 'technical' },
-  { name: 'Node.js', required: true, weight: 8, category: 'technical' },
-  { name: 'PostgreSQL', required: true, weight: 7, category: 'technical' },
+  { name: 'TypeScript', required: true, weight: 10, category: 'technical' as const },
+  { name: 'React', required: true, weight: 10, category: 'technical' as const },
+  { name: 'Node.js', required: true, weight: 8, category: 'technical' as const },
+  { name: 'PostgreSQL', required: true, weight: 7, category: 'technical' as const },
 ];
 
 const mockExperience = [
@@ -85,10 +85,10 @@ const mockScoringInput = {
   education: mockEducation,
   projects: mockProjects,
   summary: 'Senior Full Stack Developer with 7 years of experience',
-  rawText: 'Senior Full Stack Developer with 7 years of experience building scalable web applications.',
   requiredSkills: mockRequiredSkills,
-  optionalSkills: [{ name: 'Docker', required: false, weight: 5, category: 'technical' }],
+  preferredSkills: [{ name: 'Docker', required: false, weight: 5, category: 'tool' as const }],
   experienceRequired: 5,
+  experiencePreferred: 7,
 };
 
 describe('Scoring Engine', () => {

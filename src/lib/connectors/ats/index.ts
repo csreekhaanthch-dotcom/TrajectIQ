@@ -30,7 +30,15 @@ export function createATSConnector(config: ATSConfig): ATSConnector {
     case 'JOBVITE':
     case 'CUSTOM':
     default:
-      return new GenericATSConnector(config as Parameters<typeof GenericATSConnector>[0]);
+      // For generic connector, we need endpoints configuration
+      return new GenericATSConnector({
+        ...config,
+        endpoints: {
+          jobs: config.baseUrl ? `${config.baseUrl}/jobs` : '/api/jobs',
+          candidates: config.baseUrl ? `${config.baseUrl}/candidates` : '/api/candidates',
+        },
+        authType: 'API_KEY',
+      });
   }
 }
 

@@ -232,7 +232,7 @@ export class GreenhouseConnector implements ATSConnector {
       id: String(job.id),
       title: String(job.title || ''),
       department: job.departments ? String((job.departments as Array<{name: string}>)[0]?.name) : null,
-      location: String(job.location?.name || ''),
+      location: String((job.location as Record<string, unknown>)?.name || ''),
       employmentType: 'FULL_TIME',
       status: job.status === 'open' ? 'ACTIVE' : 'CLOSED',
       createdAt: new Date(job.created_at as string || Date.now()),
@@ -246,7 +246,7 @@ export class GreenhouseConnector implements ATSConnector {
       id: String(data.id),
       title: String(data.title || ''),
       department: data.departments ? String((data.departments as Array<{name: string}>)[0]?.name) : null,
-      location: String(data.location?.name || ''),
+      location: String((data.location as Record<string, unknown>)?.name || ''),
       employmentType: 'FULL_TIME',
       status: data.status === 'open' ? 'ACTIVE' : 'CLOSED',
       createdAt: new Date(data.created_at as string || Date.now()),
@@ -271,13 +271,13 @@ export class GreenhouseConnector implements ATSConnector {
       currentTitle: String(c.title || ''),
       currentCompany: String(c.company || ''),
       location: String(c.location || ''),
-      linkedinUrl: (c.social_media_addresses as Array<{value: string}>)?.find(
-        (s: {type: string}) => s.type === 'linkedin'
+      linkedinUrl: (c.social_media_addresses as Array<{type: string; value: string}>)?.find(
+        s => s.type === 'linkedin'
       )?.value || null,
       resumeUrl: (c.attachments as Array<{url: string}>)?.[0]?.url || null,
       appliedAt: new Date(c.applied_at as string || Date.now()),
       status: String(c.status || 'NEW'),
-      source: String(c.source?.name || 'MANUAL_UPLOAD'),
+      source: String((c.source as Record<string, unknown>)?.name || 'MANUAL_UPLOAD'),
       tags: (c.tags as string[]) || [],
       notes: (c.notes as string[]) || [],
     };

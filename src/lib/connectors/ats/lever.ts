@@ -250,26 +250,30 @@ export class LeverConnector implements ATSConnector {
   private mapJobs(data: unknown): ATSJob[] {
     if (!Array.isArray(data)) return [];
     
-    return data.map((job: Record<string, unknown>) => ({
-      id: String(job.id),
-      title: String(job.text || ''),
-      department: job.categories?.team ? String(job.categories.team) : null,
-      location: String(job.categories?.location || ''),
-      employmentType: String(job.categories?.commitment || 'FULL_TIME'),
-      status: job.state === 'published' ? 'ACTIVE' : 'DRAFT',
-      createdAt: new Date(job.createdAt as number || Date.now()),
-      updatedAt: new Date(job.updatedAt as number || Date.now()),
-      candidateCount: 0, // Would need separate query
-    }));
+    return data.map((job: Record<string, unknown>) => {
+      const categories = job.categories as Record<string, string> | undefined;
+      return {
+        id: String(job.id),
+        title: String(job.text || ''),
+        department: categories?.team ? String(categories.team) : null,
+        location: String(categories?.location || ''),
+        employmentType: String(categories?.commitment || 'FULL_TIME'),
+        status: job.state === 'published' ? 'ACTIVE' : 'DRAFT',
+        createdAt: new Date(job.createdAt as number || Date.now()),
+        updatedAt: new Date(job.updatedAt as number || Date.now()),
+        candidateCount: 0, // Would need separate query
+      };
+    });
   }
 
   private mapJob(data: Record<string, unknown>): ATSJob {
+    const categories = data.categories as Record<string, string> | undefined;
     return {
       id: String(data.id),
       title: String(data.text || ''),
-      department: (data.categories as Record<string, string>)?.team || null,
-      location: String((data.categories as Record<string, string>)?.location || ''),
-      employmentType: String((data.categories as Record<string, string>)?.commitment || 'FULL_TIME'),
+      department: categories?.team || null,
+      location: String(categories?.location || ''),
+      employmentType: String(categories?.commitment || 'FULL_TIME'),
       status: data.state === 'published' ? 'ACTIVE' : 'DRAFT',
       createdAt: new Date(data.createdAt as number || Date.now()),
       updatedAt: new Date(data.updatedAt as number || Date.now()),
@@ -285,6 +289,7 @@ export class LeverConnector implements ATSConnector {
 
   private mapCandidate(c: Record<string, unknown>): ATSCandidate {
     const name = String(c.name || '').split(' ');
+    const stage = c.stage as Record<string, string> | undefined;
     
     return {
       id: String(c.id),
@@ -295,13 +300,13 @@ export class LeverConnector implements ATSConnector {
       currentTitle: String(c.headline || ''),
       currentCompany: '',
       location: String(c.location || ''),
-      linkedinUrl: (c.links as Array<{url: string}>)?.find(
-        (l: {type: string}) => l.type === 'linkedin'
+      linkedinUrl: (c.links as Array<{type: string; url: string}>)?.find(
+        l => l.type === 'linkedin'
       )?.url || null,
       resumeUrl: (c.resumes as Array<{url: string}>)?.[0]?.url || null,
       appliedAt: new Date(c.createdAt as number || Date.now()),
-      status: String(c.stage?.text || 'NEW'),
-      source: String(c.sources?.[0] || 'MANUAL_UPLOAD'),
+      status: String(stage?.text || 'NEW'),
+      source: String((c.sources as string[])?.[0] || 'MANUAL_UPLOAD'),
       tags: (c.tags as string[]) || [],
       notes: (c.notes as string[]) || [],
     };
