@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { FileText, Download, Plus, BarChart3, Users, Briefcase, TrendingUp, Calendar, ChevronDown, Eye } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { AppLayout } from '@/components/layout';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { cn } from '@/lib/utils';
 

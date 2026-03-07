@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Briefcase, Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Eye, Pause, Play, Copy } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { AppLayout } from '@/components/layout';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { GradeBadge } from '@/components/shared/GradeBadge';
 import { cn } from '@/lib/utils';

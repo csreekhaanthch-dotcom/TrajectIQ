@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Target, Upload, ChevronDown, Check, AlertCircle, TrendingUp, Briefcase, Users, Award } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { AppLayout } from '@/components/layout';
 import { GradeBadge } from '@/components/shared/GradeBadge';
 import { ScoreGauge } from '@/components/shared/ScoreGauge';
 import { cn } from '@/lib/utils';

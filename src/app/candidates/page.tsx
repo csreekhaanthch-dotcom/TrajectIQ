@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Users, Search, Filter, MoreHorizontal, Eye, Trash2, Mail, FileText, Upload, ChevronDown, X } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { AppLayout } from '@/components/layout';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { GradeBadge } from '@/components/shared/GradeBadge';
 import { ScoreGauge } from '@/components/shared/ScoreGauge';

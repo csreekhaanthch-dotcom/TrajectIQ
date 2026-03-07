@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { User, Building, Bell, Shield, Palette, Key, Save, Moon, Sun, Globe, CreditCard } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { AppLayout } from '@/components/layout';
 import { cn } from '@/lib/utils';
 
 interface UserSettings {

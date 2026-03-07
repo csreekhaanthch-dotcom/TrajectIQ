@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Mail, Plus, RefreshCw, Trash2, Check, X, AlertCircle, Clock } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { AppLayout } from '@/components/layout';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { cn } from '@/lib/utils';
 
