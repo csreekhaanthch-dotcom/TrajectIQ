@@ -1,0 +1,34 @@
+# TrajectIQ Python Backend - Render Configuration
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: trajectiq-backend
+    runtime: python
+    region: oregon
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.4
+      - key: DATABASE_URL
+        fromDatabase:
+          name: trajectiq-db
+          property: connectionString
+      - key: LOG_LEVEL
+        value: info
+      - key: PYTHONUNBUFFERED
+        value: "1"
+
+    disk:
+      name: model-cache
+      mountPath: /opt/render/project/.cache
+      sizeGB: 2
+
+databases:
+  - name: trajectiq-db
+    region: oregon
+    plan: starter

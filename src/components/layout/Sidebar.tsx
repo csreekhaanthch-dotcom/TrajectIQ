@@ -23,6 +23,7 @@ import {
   ChevronRight,
   Loader2,
   Shield,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
@@ -49,6 +50,7 @@ const menuItems = [
     section: 'Analysis',
     items: [
       { icon: Target, label: 'Evaluate Resumes', href: '/evaluate', badge: 'Main' },
+      { icon: Sparkles, label: 'AI Search', href: '/candidate-search', badge: 'New' },
       { icon: Users, label: 'Candidates', href: '/candidates', badge: null },
       { icon: FileText, label: 'Reports', href: '/reports', badge: null },
     ]
