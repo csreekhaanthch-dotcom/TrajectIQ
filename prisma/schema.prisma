@@ -1,0 +1,763 @@
+// TrajectIQ - Hiring Intelligence Platform Database Schema
+// Supports PostgreSQL (production/Vercel) and SQLite (development)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER MANAGEMENT
+// ============================================
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  passwordHash      String
+  firstName         String
+  lastName          String
+  role              String    @default("RECRUITER")
+  organizationId    String?
+  isActive          Boolean   @default(true)
+  lastLoginAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  organization      Organization?  @relation(fields: [organizationId], references: [id])
+  emailAccounts     EmailAccount[]
+  requirements      Requirement[]
+  candidates        Candidate[]
+  reports           Report[]
+  auditLogs         AuditLog[]
+
+  @@index([email])
+  @@index([organizationId])
+}
+
+model Organization {
+  id              String    @id @default(uuid())
+  name            String
+  slug            String    @unique
+  plan            String    @default("FREE")
+  planStatus      String    @default("ACTIVE") // ACTIVE, PAST_DUE, CANCELED, TRIALING
+  maxUsers        Int       @default(5)
+  maxCandidates   Int       @default(100)
+  maxJobs         Int       @default(5)
+  stripeCustomerId      String?   @unique
+  stripeSubscriptionId  String?   @unique
+  stripePriceId         String?
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+  trialEndsAt           DateTime?
+  settings        String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  users           User[]
+  emailAccounts   EmailAccount[]
+  requirements    Requirement[]
+  candidates      Candidate[]
+  atsConnections  ATSConnection[]
+  reports         Report[]
+  subscriptions   Subscription[]
+  invoices        Invoice[]
+  usageRecords    UsageRecord[]
+
+  @@index([slug])
+  @@index([stripeCustomerId])
+}
+
+// ============================================
+// SUBSCRIPTION & BILLING
+// ============================================
+
+model Subscription {
+  id                    String    @id @default(uuid())
+  organizationId        String
+  
+  stripeSubscriptionId  String    @unique
+  stripePriceId         String
+  stripeProductId       String
+  stripeCustomerId      String
+  
+  status                String    // active, canceled, past_due, trialing, etc.
+  plan                  String    // FREE, STARTER, PROFESSIONAL, ENTERPRISE
+  
+  currentPeriodStart    DateTime
+  currentPeriodEnd      DateTime
+  cancelAtPeriodEnd     Boolean   @default(false)
+  canceledAt            DateTime?
+  
+  trialStart            DateTime?
+  trialEnd              DateTime?
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([stripeSubscriptionId])
+  @@index([status])
+}
+
+model Invoice {
+  id                    String    @id @default(uuid())
+  organizationId        String
+  
+  stripeInvoiceId       String    @unique
+  stripeSubscriptionId  String?
+  
+  amount                Float
+  currency              String    @default("usd")
+  status                String    // draft, open, paid, void, uncollectible
+  
+  invoiceNumber         String?
+  invoiceUrl            String?
+  invoicePdf            String?
+  
+  dueDate               DateTime?
+  paidAt                DateTime?
+  
+  description           String?
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([stripeInvoiceId])
+  @@index([status])
+}
+
+model UsageRecord {
+  id              String    @id @default(uuid())
+  organizationId  String
+  
+  resourceType    String    // CANDIDATES, JOBS, USERS, EMAIL_ACCOUNTS
+  action          String    // CREATE, DELETE
+  quantity        Int       @default(1)
+  
+  metadata        String?   // JSON for additional context
+  
+  createdAt       DateTime  @default(now())
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([resourceType])
+  @@index([createdAt])
+}
+
+// ============================================
+// EMAIL CONNECTIVITY
+// ============================================
+
+model EmailAccount {
+  id              String    @id @default(uuid())
+  userId          String
+  organizationId  String
+  provider        String
+  email           String
+  protocol        String    @default("IMAP")
+  
+  encryptedCredentials  String
+  
+  accessToken     String?
+  refreshToken    String?
+  tokenExpiresAt  DateTime?
+  
+  isConnected     Boolean   @default(false)
+  lastSyncAt      DateTime?
+  syncStatus      String    @default("PENDING")
+  errorMessage    String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  emailThreads    EmailThread[]
+  requirements    Requirement[]
+
+  @@unique([userId, email])
+  @@index([organizationId])
+  @@index([provider])
+}
+
+model EmailThread {
+  id              String    @id @default(uuid())
+  emailAccountId  String
+  externalId      String
+  
+  subject         String
+  sender          String
+  senderEmail     String
+  recipient       String
+  receivedAt      DateTime
+  
+  isRequirement   Boolean   @default(false)
+  hasReplies      Boolean   @default(false)
+  replyCount      Int       @default(0)
+  
+  rawContent      String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  emailAccount    EmailAccount  @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
+  attachments     Attachment[]
+  replies         EmailReply[]
+  requirements    Requirement[]
+
+  @@unique([emailAccountId, externalId])
+  @@index([emailAccountId])
+  @@index([isRequirement])
+}
+
+model EmailReply {
+  id              String    @id @default(uuid())
+  threadId        String
+  externalId      String
+  
+  sender          String
+  senderEmail     String
+  receivedAt      DateTime
+  rawContent      String?
+  
+  processedAt     DateTime?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  thread          EmailThread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  attachments     Attachment[]
+
+  @@unique([threadId, externalId])
+  @@index([threadId])
+}
+
+model Attachment {
+  id              String    @id @default(uuid())
+  
+  threadId        String?
+  replyId         String?
+  
+  filename        String
+  mimeType        String
+  fileSize        Int
+  contentHash     String
+  
+  storagePath     String?
+  parsedContent   String?
+  
+  isProcessed     Boolean   @default(false)
+  isResume        Boolean   @default(false)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  thread          EmailThread?  @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  reply           EmailReply?   @relation(fields: [replyId], references: [id], onDelete: Cascade)
+  resume          Resume?
+
+  @@unique([contentHash])
+  @@index([threadId])
+  @@index([replyId])
+  @@index([isResume])
+}
+
+// ============================================
+// JOB REQUIREMENTS
+// ============================================
+
+model Requirement {
+  id              String    @id @default(uuid())
+  organizationId  String
+  createdById     String
+  emailAccountId  String?
+  threadId        String?
+  
+  title           String
+  department      String?
+  location        String?
+  employmentType  String    @default("FULL_TIME")
+  salaryRange     String?
+  
+  requiredSkills      String
+  preferredSkills     String?
+  experienceRequired  Int       @default(0)
+  experiencePreferred Int?
+  educationLevel      String?
+  certifications      String?
+  
+  sourceEmailSubject  String?
+  sourceEmailBody     String?
+  
+  status          String    @default("DRAFT")
+  deadline        DateTime?
+  
+  sdiWeight       Float     @default(0.40)
+  csigWeight      Float     @default(0.15)
+  iaeWeight       Float     @default(0.20)
+  ctaWeight       Float     @default(0.15)
+  errWeight       Float     @default(0.10)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy       User          @relation(fields: [createdById], references: [id])
+  emailAccount    EmailAccount? @relation(fields: [emailAccountId], references: [id])
+  thread          EmailThread?  @relation(fields: [threadId], references: [id])
+  candidates      Candidate[]
+  scores          Score[]
+  reports         Report[]
+  
+  // AI Pipeline relations
+  semanticScores  SemanticScore[]
+  skillMatchResults SkillMatchResult[]
+
+  @@index([organizationId])
+  @@index([status])
+}
+
+// ============================================
+// CANDIDATES & RESUMES
+// ============================================
+
+model Candidate {
+  id              String    @id @default(uuid())
+  organizationId  String
+  requirementId   String?
+  createdById     String
+  
+  firstName       String
+  lastName        String
+  email           String?
+  phone           String?
+  location        String?
+  linkedinUrl     String?
+  githubUrl       String?
+  portfolioUrl    String?
+  
+  currentTitle    String?
+  currentCompany  String?
+  yearsExperience Int?
+  
+  rawResumeText   String?
+  
+  status          String    @default("NEW")
+  source          String    @default("MANUAL_UPLOAD")
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  requirement     Requirement?  @relation(fields: [requirementId], references: [id])
+  createdBy       User          @relation(fields: [createdById], references: [id])
+  resumes         Resume[]
+  scores          Score[]
+  reports         Report[]
+  
+  // AI Pipeline relations
+  entities        CandidateEntity[]
+  skills          CandidateSkill[]
+  embeddings      ResumeEmbedding[]
+  semanticScores  SemanticScore[]
+  skillMatchResults SkillMatchResult[]
+
+  @@unique([organizationId, email])
+  @@index([organizationId])
+  @@index([requirementId])
+  @@index([status])
+}
+
+model Resume {
+  id              String    @id @default(uuid())
+  candidateId     String
+  attachmentId    String?   @unique
+  
+  skills          String
+  experience      String
+  education       String
+  projects        String?
+  certifications  String?
+  languages       String?
+  
+  summary         String?
+  
+  originalFilename    String?
+  parsedAt        DateTime?
+  parseVersion    String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  candidate       Candidate     @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  attachment      Attachment?   @relation(fields: [attachmentId], references: [id])
+
+  @@index([candidateId])
+}
+
+// ============================================
+// SCORING ENGINE
+// ============================================
+
+model Score {
+  id              String    @id @default(uuid())
+  candidateId     String
+  requirementId   String
+  
+  sdiScore        Float
+  csigScore       Float
+  iaeScore        Float
+  ctaScore        Float
+  errScore        Float
+  
+  sdiWeighted     Float
+  csigWeighted    Float
+  iaeWeighted     Float
+  ctaWeighted     Float
+  errWeighted     Float
+  
+  finalScore      Float
+  grade           String
+  tier            Int
+  
+  recommendation  String
+  
+  scoreBreakdown  String
+  skillMatches    String?
+  impactSignals   String?
+  careerProgression String?
+  
+  scoringVersion  String    @default("1.0")
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  candidate       Candidate     @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  requirement     Requirement   @relation(fields: [requirementId], references: [id])
+
+  @@unique([candidateId, requirementId])
+  @@index([candidateId])
+  @@index([requirementId])
+  @@index([finalScore])
+}
+
+// ============================================
+// REPORTS
+// ============================================
+
+model Report {
+  id              String    @id @default(uuid())
+  organizationId  String?
+  requirementId   String?
+  candidateId     String?
+  createdById     String
+  
+  type            String
+  title           String
+  content         String
+  
+  comparedCandidateIds String?
+  
+  isPublic        Boolean   @default(false)
+  shareToken      String?   @unique
+  
+  downloadedAt    DateTime?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  organization    Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  requirement     Requirement?  @relation(fields: [requirementId], references: [id])
+  candidate       Candidate?    @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+  createdBy       User          @relation(fields: [createdById], references: [id])
+
+  @@index([organizationId])
+  @@index([requirementId])
+  @@index([candidateId])
+  @@index([type])
+}
+
+// ============================================
+// ATS INTEGRATIONS
+// ============================================
+
+model ATSConnection {
+  id              String    @id @default(uuid())
+  organizationId  String
+  
+  provider        String
+  name            String
+  
+  encryptedCredentials  String
+  
+  apiKey          String?
+  apiSecret       String?
+  
+  isConnected     Boolean   @default(false)
+  lastSyncAt      DateTime?
+  syncStatus      String    @default("PENDING")
+  
+  settings        String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, provider])
+  @@index([organizationId])
+}
+
+// ============================================
+// AUDIT LOGGING
+// ============================================
+
+model AuditLog {
+  id              String    @id @default(uuid())
+  organizationId  String?
+  userId          String?
+  
+  action          String
+  entityType      String
+  entityId        String?
+  
+  oldValue        String?
+  newValue        String?
+  
+  ipAddress       String?
+  userAgent       String?
+  
+  createdAt       DateTime  @default(now())
+
+  user            User?         @relation(fields: [userId], references: [id])
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+// ============================================
+// AI PIPELINE TABLES
+// ============================================
+
+// NLP Entities extracted by spaCy
+model CandidateEntity {
+  id              String    @id @default(uuid())
+  candidateId     String
+  resumeId        String?
+  
+  entityType      String    // ORG, JOB_TITLE, LOCATION, DATE, PERSON, GPE
+  entityValue     String
+  entityText      String    // Original text
+  
+  startPos        Int?      // Character position in text
+  endPos          Int?
+  confidence      Float?    @default(1.0)
+  
+  // Context around entity
+  sentenceContext String?
+  
+  // Metadata
+  source          String    @default("spacy") // spacy, docling, pyresparser
+  verified        Boolean   @default(false)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  candidate       Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+  @@index([entityType])
+  @@index([entityValue])
+}
+
+// Skills extracted by SkillNER
+model CandidateSkill {
+  id              String    @id @default(uuid())
+  candidateId     String
+  resumeId        String?
+  
+  skillName       String
+  skillCategory   String?   // programming, framework, tool, soft_skill, etc.
+  skillType       String?   // hard, soft, technical
+  
+  // Extraction metadata
+  extractionSource String   @default("skillner") // skillner, spacy, manual
+  confidence      Float?    @default(1.0)
+  
+  // Context
+  yearsExperience Int?
+  proficiencyLevel String?  // beginner, intermediate, expert
+  
+  // Match metadata
+  matchedToJobSkill Boolean @default(false)
+  isRequired      Boolean   @default(false)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  candidate       Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId, skillName])
+  @@index([candidateId])
+  @@index([skillName])
+  @@index([skillCategory])
+}
+
+// Resume embeddings for semantic matching
+model ResumeEmbedding {
+  id              String    @id @default(uuid())
+  candidateId     String
+  resumeId        String?
+  
+  // Embedding vector stored as JSON array
+  embedding       String    // JSON array of floats
+  
+  // Model metadata
+  modelName       String    @default("all-MiniLM-L6-v2")
+  modelVersion    String?
+  vectorDimension Int       @default(384)
+  
+  // Content hashed for cache invalidation
+  contentHash     String
+  
+  // Processing metadata
+  processedAt     DateTime  @default(now())
+  processingTimeMs Int?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  candidate       Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId, modelName])
+  @@index([candidateId])
+}
+
+// Semantic match scores
+model SemanticScore {
+  id              String    @id @default(uuid())
+  candidateId     String
+  requirementId   String
+  
+  // Semantic similarity
+  similarityScore Float     // 0.0 to 1.0
+  
+  // Model metadata
+  modelName       String    @default("all-MiniLM-L6-v2")
+  
+  // Breakdown scores
+  titleMatchScore Float?
+  skillsMatchScore Float?
+  experienceMatchScore Float?
+  educationMatchScore Float?
+  
+  // Detailed analysis
+  matchedPhrases  String?   // JSON array
+  highlightSections String?  // JSON object
+  
+  // Processing
+  processedAt     DateTime  @default(now())
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  candidate       Candidate   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  requirement     Requirement @relation(fields: [requirementId], references: [id])
+
+  @@unique([candidateId, requirementId, modelName])
+  @@index([candidateId])
+  @@index([requirementId])
+  @@index([similarityScore])
+}
+
+// Skill match results
+model SkillMatchResult {
+  id              String    @id @default(uuid())
+  candidateId     String
+  requirementId   String
+  
+  // Match counts
+  matchedSkillsCount   Int       @default(0)
+  missingSkillsCount   Int       @default(0)
+  additionalSkillsCount Int      @default(0)
+  
+  // Skill lists (JSON arrays)
+  matchedSkills   String    // JSON array
+  missingSkills   String    // JSON array
+  additionalSkills String   // JSON array
+  
+  // Scores
+  skillMatchPercentage Float  // 0-100
+  
+  // Category breakdown
+  technicalSkillMatch Float?
+  softSkillMatch    Float?
+  
+  // Gap analysis
+  criticalGaps    String?   // JSON array of missing critical skills
+  recommendedSkills String? // JSON array
+  
+  processedAt     DateTime  @default(now())
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  candidate       Candidate   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  requirement     Requirement @relation(fields: [requirementId], references: [id])
+
+  @@unique([candidateId, requirementId])
+  @@index([candidateId])
+  @@index([requirementId])
+  @@index([skillMatchPercentage])
+}
+
+// AI Processing Jobs
+model AIProcessingJob {
+  id              String    @id @default(uuid())
+  organizationId  String
+  
+  jobType         String    // RESUME_PARSE, SEMANTIC_MATCH, SKILL_EXTRACT
+  status          String    @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  
+  // Input
+  inputType       String    // RESUME, EMAIL_ATTACHMENT, CANDIDATE
+  inputId         String?
+  inputData       String?   // JSON
+  
+  // Output
+  outputData      String?   // JSON
+  
+  // Error handling
+  errorMessage    String?
+  errorDetails    String?
+  retryCount      Int       @default(0)
+  
+  // Timing
+  startedAt       DateTime?
+  completedAt     DateTime?
+  processingTimeMs Int?
+  
+  // Priority queue
+  priority        Int       @default(5)  // 1-10, lower is higher priority
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([jobType])
+  @@index([priority])
+  @@index([createdAt])
+}

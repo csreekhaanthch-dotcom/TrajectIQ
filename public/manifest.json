@@ -1,0 +1,16 @@
+{
+  "name": "TrajectIQ",
+  "short_name": "TrajectIQ",
+  "description": "Email-Driven Hiring Intelligence SaaS Platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "any",
+      "type": "image/png"
+    }
+  ]
+}

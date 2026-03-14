@@ -1,0 +1,30 @@
+# TrajectIQ AI Backend - Docker Compose
+# Run the Python FastAPI backend with all AI capabilities
+
+version: '3.8'
+
+services:
+  ai-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: trajectiq-ai-backend
+    ports:
+      - "8001:8001"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=info
+      - DATABASE_URL=${DATABASE_URL}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - trajectiq-network
+
+networks:
+  trajectiq-network:
+    driver: bridge
