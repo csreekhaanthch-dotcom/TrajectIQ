@@ -2,13 +2,17 @@ import { PrismaClient } from '@prisma/client';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
-  dbConnected: boolean | undefined;
 };
 
 // Create Prisma client with error handling
-function createPrismaClient() {
+function createPrismaClient(): PrismaClient | null {
   try {
     const databaseUrl = process.env.DATABASE_URL;
+    
+    // Debug logging
+    console.log('[DB] Creating Prisma client...');
+    console.log('[DB] DATABASE_URL:', databaseUrl ? `"${databaseUrl.substring(0, 50)}..."` : 'NOT SET');
+    console.log('[DB] NODE_ENV:', process.env.NODE_ENV);
     
     // Check if DATABASE_URL is properly configured
     if (!databaseUrl) {
@@ -33,13 +37,29 @@ function createPrismaClient() {
   }
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+// Initialize Prisma client
+// In development, use global to persist across hot reloads
+let prismaClient: PrismaClient | null = null;
 
-if (process.env.NODE_ENV !== 'production' && prisma) {
-  globalForPrisma.prisma = prisma;
+function getPrisma(): PrismaClient | null {
+  if (!prismaClient) {
+    if (process.env.NODE_ENV !== 'production' && globalForPrisma.prisma) {
+      prismaClient = globalForPrisma.prisma;
+    } else {
+      prismaClient = createPrismaClient();
+      if (process.env.NODE_ENV !== 'production' && prismaClient) {
+        globalForPrisma.prisma = prismaClient;
+      }
+    }
+  }
+  return prismaClient;
 }
 
-// Alias for convenience - can be null if database is not configured
+// Export the Prisma client (evaluated at import time for compatibility)
+// This will be null if DATABASE_URL is not set
+export const prisma = getPrisma();
+
+// Alias for convenience
 export const db = prisma;
 
 export default prisma;
@@ -50,13 +70,17 @@ let connectionSuccessful = false;
 
 // Helper to check if database is available
 export function isDatabaseAvailable(): boolean {
-  const available = db !== null;
+  const client = getPrisma();
+  const available = client !== null;
+  console.log('[DB] isDatabaseAvailable:', available);
   return available;
 }
 
 // Check if database can actually connect (async version)
 export async function canConnectToDatabase(): Promise<boolean> {
-  if (!prisma) {
+  const client = getPrisma();
+  if (!client) {
+    console.log('[DB] canConnectToDatabase: No client available');
     return false;
   }
   
@@ -67,7 +91,7 @@ export async function canConnectToDatabase(): Promise<boolean> {
   
   try {
     // Try a simple query to test the connection
-    await prisma.$queryRaw`SELECT 1`;
+    await client.$queryRaw`SELECT 1`;
     connectionSuccessful = true;
     console.log('[DB] Database connection test successful');
   } catch (error) {
@@ -83,13 +107,14 @@ export async function canConnectToDatabase(): Promise<boolean> {
 
 // Test database connection
 export async function testDatabaseConnection(): Promise<{ success: boolean; error?: string }> {
-  if (!prisma) {
+  const client = getPrisma();
+  if (!client) {
     return { success: false, error: 'Prisma client not initialized' };
   }
   
   try {
     // Try a simple query to test the connection
-    await prisma.$queryRaw`SELECT 1`;
+    await client.$queryRaw`SELECT 1`;
     console.log('[DB] Database connection test successful');
     return { success: true };
   } catch (error) {
@@ -104,12 +129,13 @@ export async function safeDbOperation<T>(
   operation: (db: PrismaClient) => Promise<T>,
   fallback: T
 ): Promise<T> {
-  if (!db) {
+  const client = getPrisma();
+  if (!client) {
     console.warn('[DB] Database not available, returning fallback value');
     return fallback;
   }
   try {
-    return await operation(db);
+    return await operation(client);
   } catch (error) {
     console.error('[DB] Database operation failed:', error);
     return fallback;

@@ -22,8 +22,12 @@ from ai_engines.nlp_engine.engine import NLPAnalysisResult
 from ai_engines.skill_extraction.engine import SkillExtractionResult
 from ai_engines.semantic_matching.engine import SemanticMatchResult
 
+# Import API routers
+from api.vector_search import router as vector_search_router
+
 # Configure logging
-logger.add_sink(lambda msg: print(msg, end=""))
+import sys
+logger.add(sys.stdout, colorize=True)
 
 # Create FastAPI app
 app = FastAPI(
@@ -42,6 +46,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include API routers
+app.include_router(vector_search_router)
 
 
 # ============================================
