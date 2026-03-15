@@ -59,7 +59,7 @@ class AIResumePipeline:
     2. pyresparser Resume Extraction
     3. spaCy NLP Processing
     4. SkillNER Skill Extraction
-    5. Sentence Transformers Semantic Matching
+    5. Sentence Transformers Semantic Matching (lazy - only when needed)
     """
     
     def __init__(self):
@@ -67,33 +67,41 @@ class AIResumePipeline:
         self.resume_parser = ResumeParserEngine()
         self.nlp_engine = NLPEngine()
         self.skill_extractor = SkillExtractorEngine()
-        self.semantic_engine = SemanticMatchingEngine()
+        self.semantic_engine = None  # Lazy loaded - heavy memory usage
         
         self._initialized = False
     
     async def initialize(self):
-        """Initialize all pipeline components"""
+        """Initialize lightweight pipeline components only"""
         if self._initialized:
             return
         
-        logger.info("Initializing AI Resume Pipeline...")
+        logger.info("Initializing AI Resume Pipeline (lightweight mode)...")
         
         try:
-            # Initialize in parallel for speed
+            # Initialize lightweight components only
+            # Do NOT initialize semantic_engine here - it uses too much memory
             await asyncio.gather(
                 self.docling_parser.initialize(),
                 self.resume_parser.initialize(),
                 self.nlp_engine.initialize(),
                 self.skill_extractor.initialize(),
-                self.semantic_engine.initialize(),
             )
             
             self._initialized = True
-            logger.info("AI Resume Pipeline initialized successfully")
+            logger.info("AI Resume Pipeline initialized successfully (semantic matching lazy-loaded)")
         except Exception as e:
             logger.error(f"Failed to initialize pipeline: {e}")
             self._initialized = False
             raise
+    
+    async def _get_semantic_engine(self):
+        """Lazy load semantic engine only when needed"""
+        if self.semantic_engine is None:
+            logger.info("Lazy loading semantic matching engine...")
+            self.semantic_engine = SemanticMatchingEngine()
+            await self.semantic_engine.initialize()
+        return self.semantic_engine
     
     async def process_resume(
         self,
@@ -233,15 +241,23 @@ class AIResumePipeline:
             result.errors.append(f"SkillNER: {str(e)}")
         
         try:
-            # Stage 5: Semantic Matching
+            # Stage 5: Semantic Matching (lazy loaded)
             if job_description:
-                logger.info("Stage 5: Sentence Transformers Semantic Matching")
-                semantic_result = await self.semantic_engine.match_resume_to_job(
-                    job_description,
-                    full_text,
-                    required_skills=required_skills,
-                )
-                result.semantic_score = semantic_result.similarity_score
+                logger.info("Stage 5: Semantic Matching (lazy loading engine)")
+                try:
+                    semantic_engine = await self._get_semantic_engine()
+                    semantic_result = await semantic_engine.match_resume_to_job(
+                        job_description,
+                        full_text,
+                        required_skills=required_skills,
+                    )
+                    result.semantic_score = semantic_result.similarity_score
+                except Exception as se:
+                    # Semantic matching is optional - continue without it
+                    logger.warning(f"Semantic matching unavailable: {se}")
+                    result.errors.append(f"Semantic: {str(se)}")
+                    # Use keyword-based similarity as fallback
+                    result.semantic_score = self._fallback_similarity(job_description, full_text)
             else:
                 logger.info("Stage 5: Skipped (no job description)")
             
@@ -257,6 +273,22 @@ class AIResumePipeline:
             result.confidence = max(0.5, 1.0 - len(result.errors) * 0.1)
         
         return result
+    
+    def _fallback_similarity(self, job_description: str, resume_text: str) -> float:
+        """Fallback keyword-based similarity when semantic engine unavailable"""
+        job_words = set(job_description.lower().split())
+        resume_words = set(resume_text.lower().split())
+        
+        # Remove common words
+        stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by'}
+        job_words -= stop_words
+        resume_words -= stop_words
+        
+        if not job_words:
+            return 0.0
+        
+        common = job_words.intersection(resume_words)
+        return len(common) / len(job_words)
     
     def _build_text_from_extraction(self, extraction: ExtractedResume) -> str:
         """Build text from pyresparser extraction"""

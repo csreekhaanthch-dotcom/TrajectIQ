@@ -1,34 +1,31 @@
 # TrajectIQ AI Backend
-# Advanced Resume Intelligence Pipeline
-# Compatible with Python 3.11+
+# Lightweight version for Render Free Tier (512MB RAM)
 
 # Core Web Framework
-fastapi>=0.109.0,<0.120.0
-uvicorn[standard]>=0.27.0,<0.35.0
-python-multipart>=0.0.6,<0.1.0
-python-jose[cryptography]>=3.3.0,<4.0.0
-pydantic>=2.6.0,<3.0.0
-pydantic-settings>=2.1.0,<3.0.0
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+python-jose[cryptography]>=3.3.0
+pydantic>=2.5.3
+pydantic-settings>=2.1.0
 
 # Database
-asyncpg>=0.29.0,<0.31.0
+asyncpg>=0.29.0
 
-# ============================================
-# Vector Search & Semantic Embeddings
-# ============================================
-# Sentence Transformers for semantic embeddings
-sentence-transformers>=2.2.2,<3.0.0
-torch>=2.1.0,<3.0.0
-transformers>=4.36.0,<5.0.0
-
-# ============================================
 # Core utilities
-# ============================================
-numpy>=1.26.0,<2.0.0
-httpx>=0.26.0,<0.28.0
-aiofiles>=23.2.1,<25.0.0
-python-dotenv>=1.0.0,<2.0.0
-loguru>=0.7.2,<0.8.0
+numpy>=1.26.0
+httpx>=0.26.0
+aiofiles>=23.2.1
+python-dotenv>=1.0.0
+loguru>=0.7.2
 
 # Async support
-anyio>=4.2.0,<5.0.0
+anyio>=4.2.0
+
+# ============================================
+# Vector Search - DISABLED for free tier
+# Enable for paid plans (requires 1GB+ RAM)
+# ============================================
+# torch>=2.1.0
+# transformers>=4.36.0
+# sentence-transformers>=2.2.2

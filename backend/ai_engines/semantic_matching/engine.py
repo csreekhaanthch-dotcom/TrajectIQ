@@ -1,27 +1,30 @@
 """
 Semantic Matching Module
-Sentence Transformers for Job-Resume Matching
+Keyword-based matching for lightweight deployment
+Optional: Sentence Transformers for advanced semantic matching
 """
 import asyncio
 import json
-import numpy as np
+import re
 from typing import Dict, List, Any, Optional, Tuple
 from loguru import logger
 from pydantic import BaseModel
 
+# Try to import sentence transformers (optional, requires 1GB+ RAM)
 try:
     from sentence_transformers import SentenceTransformer
+    import numpy as np
     SENTENCE_TRANSFORMERS_AVAILABLE = True
 except ImportError:
     SENTENCE_TRANSFORMERS_AVAILABLE = False
-    logger.warning("Sentence Transformers not available. Install with: pip install sentence-transformers")
+    logger.info("Semantic matching using keyword-based mode (sentence-transformers not installed)")
 
 
 class SemanticMatchResult(BaseModel):
     """Result of semantic matching"""
     similarity_score: float  # 0.0 to 1.0
-    job_embedding: List[float]
-    resume_embedding: List[float]
+    job_embedding: List[float] = []
+    resume_embedding: List[float] = []
     
     # Section scores
     title_similarity: Optional[float] = None
@@ -35,11 +38,12 @@ class SemanticMatchResult(BaseModel):
     
     # Metadata
     processing_time_ms: int
+    mode: str = "keyword"  # "keyword" or "semantic"
 
 
 class SemanticMatchingEngine:
     """
-    Semantic matching using Sentence Transformers.
+    Semantic matching using keyword-based or Sentence Transformers.
     Compares job descriptions with candidate resumes.
     """
     
@@ -49,55 +53,118 @@ class SemanticMatchingEngine:
         self.model_name = model_name or self.DEFAULT_MODEL
         self.model = None
         self._initialized = False
+        self._use_semantic = False
     
     async def initialize(self):
-        """Initialize the sentence transformer model"""
-        if not SENTENCE_TRANSFORMERS_AVAILABLE:
-            logger.warning("Sentence Transformers not available")
-            return
-            
+        """Initialize the matching engine"""
         if self._initialized:
             return
-            
-        try:
-            logger.info(f"Loading sentence transformer model: {self.model_name}")
-            self.model = SentenceTransformer(self.model_name)
-            self._initialized = True
-            logger.info(f"Sentence transformer initialized successfully")
-        except Exception as e:
-            logger.error(f"Failed to initialize sentence transformer: {e}")
-            self._initialized = False
+        
+        # Check if sentence transformers is available
+        if SENTENCE_TRANSFORMERS_AVAILABLE:
+            try:
+                logger.info(f"Loading sentence transformer model: {self.model_name}")
+                self.model = SentenceTransformer(self.model_name)
+                self._use_semantic = True
+                logger.info("Semantic matching initialized (transformer mode)")
+            except Exception as e:
+                logger.warning(f"Failed to load sentence transformer: {e}")
+                logger.info("Using keyword-based matching")
+                self._use_semantic = False
+        else:
+            logger.info("Semantic matching initialized (keyword mode)")
+            self._use_semantic = False
+        
+        self._initialized = True
     
-    def _get_embedding(self, text: str) -> List[float]:
-        """Get embedding for text"""
-        if not self._initialized or self.model is None:
-            # Return zero vector
-            return [0.0] * 384  # Default dimension
+    def _extract_keywords(self, text: str) -> set:
+        """Extract keywords from text"""
+        if not text:
+            return set()
+        
+        # Convert to lowercase
+        text = text.lower()
+        
+        # Remove special characters but keep spaces
+        text = re.sub(r'[^a-z0-9\s]', ' ', text)
+        
+        # Split into words
+        words = text.split()
+        
+        # Remove common stop words
+        stop_words = {
+            'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+            'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been',
+            'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+            'should', 'may', 'might', 'must', 'shall', 'can', 'need', 'dare', 'ought',
+            'used', 'using', 'use', 'this', 'that', 'these', 'those', 'it', 'its',
+            'we', 'our', 'you', 'your', 'he', 'she', 'they', 'them', 'their', 'i', 'me', 'my'
+        }
+        
+        keywords = set()
+        for word in words:
+            if len(word) > 2 and word not in stop_words:
+                keywords.add(word)
+        
+        return keywords
+    
+    def _keyword_similarity(self, text1: str, text2: str) -> Tuple[float, List[str]]:
+        """Calculate keyword-based similarity between two texts"""
+        keywords1 = self._extract_keywords(text1)
+        keywords2 = self._extract_keywords(text2)
+        
+        if not keywords1 or not keywords2:
+            return 0.0, []
+        
+        # Find matching keywords
+        matched = keywords1.intersection(keywords2)
+        
+        # Calculate Jaccard similarity
+        union = keywords1.union(keywords2)
+        similarity = len(matched) / len(union) if union else 0.0
+        
+        # Boost similarity for more matches
+        if len(matched) > 5:
+            similarity = min(1.0, similarity + 0.1)
+        if len(matched) > 10:
+            similarity = min(1.0, similarity + 0.1)
+        
+        return similarity, list(matched)
+    
+    def _get_embedding_semantic(self, text: str) -> List[float]:
+        """Get embedding using sentence transformers"""
+        if not self._use_semantic or self.model is None:
+            return []
         
         try:
+            import numpy as np
             embedding = self.model.encode(text)
             return embedding.tolist()
         except Exception as e:
             logger.error(f"Embedding error: {e}")
-            return [1.0] * 384
+            return []
     
-    def _cosine_similarity(
-        self,
-        vec1: List[float],
-        vec2: List[float]
-    ) -> float:
+    def _cosine_similarity(self, vec1: List[float], vec2: List[float]) -> float:
         """Calculate cosine similarity between two vectors"""
-        vec1_np = np.array(vec1)
-        vec2_np = np.array(vec2)
-        
-        dot_product = np.dot(vec1_np, vec2_np)
-        norm1 = np.linalg.norm(vec1_np)
-        norm2 = np.linalg.norm(vec2_np)
-        
-        if norm1 == 0 or norm2 == 0:
+        if not vec1 or not vec2:
             return 0.0
         
-        return dot_product / (norm1 * norm2)
+        try:
+            import numpy as np
+            v1 = np.array(vec1)
+            v2 = np.array(vec2)
+            
+            dot_product = np.dot(v1, v2)
+            norm1 = np.linalg.norm(v1)
+            norm2 = np.linalg.norm(v2)
+            
+            if norm1 == 0 or norm2 == 0:
+                return 0.0
+            
+            return float(dot_product / (norm1 * norm2))
+        except Exception as e:
+            logger.error(f"Similarity calculation error: {e}")
+            return 0.0
     
     async def compute_similarity(
         self,
@@ -117,12 +184,13 @@ class SemanticMatchingEngine:
         if not self._initialized:
             await self.initialize()
         
-        job_embedding = self._get_embedding(job_description)
-        resume_embedding = self._get_embedding(resume_text)
-        
-        similarity = self._cosine_similarity(job_embedding, resume_embedding)
-        
-        return similarity
+        if self._use_semantic:
+            job_embedding = self._get_embedding_semantic(job_description)
+            resume_embedding = self._get_embedding_semantic(resume_text)
+            return self._cosine_similarity(job_embedding, resume_embedding)
+        else:
+            similarity, _ = self._keyword_similarity(job_description, resume_text)
+            return similarity
     
     async def match_resume_to_job(
         self,
@@ -149,40 +217,37 @@ class SemanticMatchingEngine:
         if not self._initialized:
             await self.initialize()
         
-        # Get embeddings
-        job_embedding = self._get_embedding(job_description)
-        resume_embedding = self._get_embedding(resume_text)
+        job_embedding = []
+        resume_embedding = []
+        overall_similarity = 0.0
+        mode = "keyword"
         
-        # Overall similarity
-        overall_similarity = self._cosine_similarity(job_embedding, resume_embedding)
+        if self._use_semantic:
+            # Use semantic matching
+            job_embedding = self._get_embedding_semantic(job_description)
+            resume_embedding = self._get_embedding_semantic(resume_text)
+            overall_similarity = self._cosine_similarity(job_embedding, resume_embedding)
+            mode = "semantic"
+        else:
+            # Use keyword matching
+            overall_similarity, matched_keywords = self._keyword_similarity(job_description, resume_text)
         
-        # Section-specific similarities
-        title_similarity = None
-        skills_similarity = None
-        experience_similarity = None
-        education_similarity = None
-        
-        # Match keywords
+        # Match keywords (for both modes)
         matched_keywords = []
         job_words = set(job_description.lower().split())
         resume_words = set(resume_text.lower().split())
         matched_keywords = list(job_words.intersection(resume_words))[:20]
         
-        # Highlight sections
-        highlight_sections = {}
-        
-        # Extract and match skills if provided
+        # Skills similarity if provided
+        skills_similarity = None
         if required_skills:
             skills_text = ' '.join(required_skills)
-            skills_embedding = self._get_embedding(skills_text)
-            
-            # Find skills section in resume
-            skills_section = self._extract_skills_section(resume_text)
-            if skills_section:
-                resume_skills_embedding = self._get_embedding(skills_section)
-                skills_similarity = self._cosine_similarity(
-                    skills_embedding, resume_skills_embedding
-                )
+            if self._use_semantic:
+                skills_embedding = self._get_embedding_semantic(skills_text)
+                resume_skills_embedding = self._get_embedding_semantic(resume_text)
+                skills_similarity = self._cosine_similarity(skills_embedding, resume_skills_embedding)
+            else:
+                skills_similarity, _ = self._keyword_similarity(skills_text, resume_text)
         
         processing_time_ms = int((asyncio.get_event_loop().time() - start_time) * 1000)
         
@@ -190,32 +255,15 @@ class SemanticMatchingEngine:
             similarity_score=overall_similarity,
             job_embedding=job_embedding,
             resume_embedding=resume_embedding,
-            title_similarity=title_similarity,
+            title_similarity=None,
             skills_similarity=skills_similarity,
-            experience_similarity=experience_similarity,
-            education_similarity=education_similarity,
+            experience_similarity=None,
+            education_similarity=None,
             matched_keywords=matched_keywords,
-            highlight_sections=highlight_sections,
+            highlight_sections={},
             processing_time_ms=processing_time_ms,
+            mode=mode,
         )
-    
-    def _extract_skills_section(self, text: str) -> str:
-        """Extract skills section from resume text"""
-        skills_keywords = [
-            'skills', 'technical skills', 'competencies', 'technologies',
-            'programming', 'languages', 'frameworks', 'tools'
-        ]
-        
-        text_lower = text.lower()
-        for keyword in skills_keywords:
-            if keyword in text_lower:
-                # Find the section after this keyword
-                idx = text_lower.find(keyword)
-                if idx != -1:
-                    # Get next 500 characters
-                    return text[idx:idx+500]
-        
-        return ""
     
     async def batch_match(
         self,
@@ -235,13 +283,9 @@ class SemanticMatchingEngine:
         if not self._initialized:
             await self.initialize()
         
-        # Get job embedding once
-        job_embedding = self._get_embedding(job_description)
-        
         results = []
         for i, resume in enumerate(resumes):
-            resume_embedding = self._get_embedding(resume)
-            similarity = self._cosine_similarity(job_embedding, resume_embedding)
+            similarity = await self.compute_similarity(job_description, resume)
             results.append((i, similarity))
         
         return results
